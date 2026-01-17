@@ -10,7 +10,10 @@
     <meta name="theme-color" content="#0a0a1a">
     <meta name="background-color" content="#0a0a1a">
     <title>Cartiños - Xestión Financeira Persoal</title>
-    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%230a0a1a' width='100' height='100' rx='20'/><text y='65' x='50' text-anchor='middle' font-size='50'>🐷</text></svg>">
+    <link rel="apple-touch-icon" href="https://icortegoso37.github.io/lastedition/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="https://icortegoso37.github.io/lastedition/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="https://icortegoso37.github.io/lastedition/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="https://icortegoso37.github.io/lastedition/apple-touch-icon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -852,7 +855,7 @@
                     <div class="info-item"><div class="info-label">Saldo Total</div><div class="info-value" id="totalBalance">0,00 €</div></div>
                     <div class="info-item"><div class="info-label">Aforro</div><div class="info-value" id="totalSavings">0,00 €</div></div>
                     <div class="info-item"><div class="info-label">Comprometido</div><div class="info-value" id="committedAmount">0,00 €</div></div>
-                    <div class="info-item"><div class="info-label">Día</div><div class="info-value" id="currentDay">1</div></div>
+                    <div class="info-item"><div class="info-label">Período</div><div class="info-value" id="currentDay">1</div></div>
                 </div>
             </div>
         </div>
@@ -942,6 +945,18 @@
         </section>
         <section class="section" id="section-settings">
             <div class="card">
+                <div class="card-header"><h2 class="card-title">📅 Período</h2></div>
+                <p style="color: var(--text-muted); margin-bottom: 12px; font-size: 0.8rem;">Configura o día que cobras para calcular o ciclo correctamente</p>
+                <div class="form-group">
+                    <label class="form-label">Día de cobro</label>
+                    <input type="number" class="form-input" id="payDayInput" min="1" max="31" placeholder="Ex: 1, 15, 28..." value="1">
+                </div>
+                <button class="btn btn-primary" id="btnSavePayDay" style="width: 100%;">Gardar período</button>
+                <div id="periodInfo" style="margin-top: 12px; padding: 10px; background: rgba(0,245,255,0.1); border-radius: 8px; font-size: 0.8rem; color: var(--text-secondary); display: none;">
+                    <span id="periodInfoText"></span>
+                </div>
+            </div>
+            <div class="card">
                 <div class="card-header"><h2 class="card-title">💾 Datos</h2></div>
                 <div class="btn-group">
                     <button class="btn btn-primary" id="btnExportJSON">JSON</button>
@@ -952,7 +967,9 @@
                 </div>
             </div>
             <div class="card"><div class="card-header"><h2 class="card-title">⚙️ Estado</h2></div><div id="systemStatus"></div></div>
-            <div class="card"><p style="color: var(--text-secondary); font-size: 0.85rem;"><strong>Cartiños v2.0</strong><br>Datos gardados localmente.</p></div>
+            <div class="card"><div class="card-header"><h2 class="card-title">ℹ️ Información</h2></div>
+                <p style="color: var(--text-secondary); line-height: 1.8;"><strong>Cartiños </strong><br>Xestión financeira persoal en galego.<br>Feito con  💙 dende Galicia.<br>Biquiños  😘</p>
+            </div>     
         </section>
     </div>
     <!-- MODALS -->
@@ -1066,27 +1083,76 @@
     <script>
     // MOTOR FINANCEIRO
     const FinancialEngine = (function() {
-        function calculateAvailableToday(data) {
+        function getPeriodDates(payDay) {
             const today = new Date(); today.setHours(0,0,0,0);
-            const currentDay = today.getDate(), currentMonth = today.getMonth(), currentYear = today.getFullYear();
-            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-            const remainingDays = daysInMonth - currentDay + 1;
+            const currentDay = today.getDate();
+            let periodStart, periodEnd;
+            
+            if (currentDay >= payDay) {
+                // Estamos no período actual (desde payDay deste mes)
+                periodStart = new Date(today.getFullYear(), today.getMonth(), payDay);
+                periodEnd = new Date(today.getFullYear(), today.getMonth() + 1, payDay - 1);
+            } else {
+                // Estamos no período que empezou o mes pasado
+                periodStart = new Date(today.getFullYear(), today.getMonth() - 1, payDay);
+                periodEnd = new Date(today.getFullYear(), today.getMonth(), payDay - 1);
+            }
+            
+            const totalDays = Math.ceil((periodEnd - periodStart) / (1000*60*60*24)) + 1;
+            const dayInPeriod = Math.ceil((today - periodStart) / (1000*60*60*24)) + 1;
+            const remainingDays = totalDays - dayInPeriod + 1;
+            
+            return { periodStart, periodEnd, totalDays, dayInPeriod, remainingDays, today };
+        }
+        
+        function calculateAvailableToday(data) {
+            const payDay = data.payDay || 1;
+            const { periodStart, periodEnd, remainingDays, today, dayInPeriod, totalDays } = getPeriodDates(payDay);
+            
             const dailySpendingBalance = (data.accounts||[]).filter(a=>a&&a.forDailySpending).reduce((s,a)=>s+(parseFloat(a.balance)||0),0);
-            const committedRecurring = (data.recurringExpenses||[]).filter(e=>e&&(parseInt(e.dayOfMonth)||1)>currentDay).reduce((s,e)=>s+(parseFloat(e.amount)||0),0);
+            
+            // Gastos fixos pendentes no período actual
+            const committedRecurring = (data.recurringExpenses||[]).filter(e=>{
+                if(!e) return false;
+                const dom = parseInt(e.dayOfMonth)||1;
+                const today = new Date();
+                const currentDay = today.getDate();
+                // Se o día do gasto fixo está entre hoxe e o fin do período
+                if (payDay === 1) {
+                    return dom > currentDay;
+                } else {
+                    if (currentDay >= payDay) {
+                        return dom > currentDay || dom < payDay;
+                    } else {
+                        return dom > currentDay && dom < payDay;
+                    }
+                }
+            }).reduce((s,e)=>s+(parseFloat(e.amount)||0),0);
+            
+            // Ingresos no período actual
             let incomesUntilToday = 0;
             (data.incomes||[]).forEach(inc=>{
                 if(!inc||!inc.date)return;
-                const d = new Date(inc.date);
-                if(d.getMonth()!==currentMonth||d.getFullYear()!==currentYear||d>today)return;
+                const d = new Date(inc.date); d.setHours(0,0,0,0);
+                if(d < periodStart || d > today) return;
                 const amt = parseFloat(inc.amount)||0;
                 incomesUntilToday += inc.incomeType==='extra'&&remainingDays>0 ? amt/remainingDays : amt;
             });
-            const dailyExpensesTotal = (data.expenses||[]).filter(e=>{if(!e||!e.date)return false;const d=new Date(e.date);return d.getMonth()===currentMonth&&d.getFullYear()===currentYear;}).reduce((s,e)=>s+(parseFloat(e.amount)||0),0);
+            
+            // Gastos no período actual
+            const dailyExpensesTotal = (data.expenses||[]).filter(e=>{
+                if(!e||!e.date)return false;
+                const d=new Date(e.date); d.setHours(0,0,0,0);
+                return d >= periodStart && d <= today;
+            }).reduce((s,e)=>s+(parseFloat(e.amount)||0),0);
+            
             const dailySavingsAmount = (data.savingsGoals||[]).filter(g=>g&&g.active!==false).reduce((s,g)=>s+(parseFloat(g.dailyAmount)||0),0);
             const availableToday = dailySpendingBalance - committedRecurring + incomesUntilToday - dailyExpensesTotal - dailySavingsAmount;
+            
             return {
                 availableToday: r2(availableToday),
                 availableWithoutSavings: r2(availableToday + dailySavingsAmount),
+                periodInfo: { dayInPeriod, totalDays, remainingDays, periodStart, periodEnd },
                 breakdown: { dailySpendingBalance: r2(dailySpendingBalance), committedRecurring: r2(committedRecurring), incomesUntilToday: r2(incomesUntilToday), dailyExpensesTotal: r2(dailyExpensesTotal), dailySavingsAmount: r2(dailySavingsAmount) }
             };
         }
@@ -1167,7 +1233,7 @@
         return { open, getAll, add, update, remove, clear, clearAll, getAllData, STORES };
     })();
     // STATE
-    let AppState = { accounts:[],incomes:[],expenses:[],recurringExpenses:[],savingsGoals:[],debts:[],transfers:[],notifications:[],lastCalculation:null };
+    let AppState = { accounts:[],incomes:[],expenses:[],recurringExpenses:[],savingsGoals:[],debts:[],transfers:[],notifications:[],lastCalculation:null,payDay:1 };
     let charts = {};
     // UI HELPERS
     const $ = id => document.getElementById(id);
@@ -1217,12 +1283,14 @@
         $('totalBalance').textContent = fc(FinancialEngine.calculateTotalBalance(AppState.accounts));
         $('totalSavings').textContent = fc(FinancialEngine.calculateTotalSavings(AppState.savingsGoals));
         $('committedAmount').textContent = fc(r.breakdown.committedRecurring);
-        $('currentDay').textContent = new Date().getDate();
+        // Mostrar día do período en lugar de día do mes
+        $('currentDay').textContent = r.periodInfo ? `${r.periodInfo.dayInPeriod}/${r.periodInfo.totalDays}` : new Date().getDate();
         const s = FinancialEngine.calculateMonthlyStats(AppState);
         $('statIncomeMonth').textContent = fc(s.monthlyIncomes);
         $('statExpenseMonth').textContent = fc(s.totalMonthlyExpenses);
         $('statRecurring').textContent = fc(s.pendingRecurring);
         $('statDailyAvg').textContent = fc(s.dailyAverage);
+        updatePeriodInfo();
     }
     function updateAccountsList() {
         const c = $('accountsList');
@@ -1466,7 +1534,9 @@
         if(!confirm('Borrar TODOS os datos?')) return;
         if(!confirm('Confirmas?')) return;
         await Database.clearAll();
-        AppState = { accounts:[],incomes:[],expenses:[],recurringExpenses:[],savingsGoals:[],debts:[],transfers:[],notifications:[],lastCalculation:null };
+        localStorage.removeItem('cartinos_payDay');
+        AppState = { accounts:[],incomes:[],expenses:[],recurringExpenses:[],savingsGoals:[],debts:[],transfers:[],notifications:[],lastCalculation:null,payDay:1 };
+        if($('payDayInput')) $('payDayInput').value = 1;
         updateAllUI(); toast('Datos borrados','warning');
     }
     // CORE
@@ -1486,6 +1556,32 @@
         AppState.accounts = d.accounts||[]; AppState.incomes = d.incomes||[]; AppState.expenses = d.expenses||[];
         AppState.recurringExpenses = d.recurringExpenses||[]; AppState.savingsGoals = d.savingsGoals||[];
         AppState.debts = d.debts||[]; AppState.transfers = d.transfers||[]; AppState.notifications = d.notifications||[];
+        // Cargar payDay desde localStorage
+        AppState.payDay = parseInt(localStorage.getItem('cartinos_payDay')) || 1;
+        if($('payDayInput')) $('payDayInput').value = AppState.payDay;
+        updatePeriodInfo();
+    }
+    function updatePeriodInfo() {
+        const info = $('periodInfo');
+        const text = $('periodInfoText');
+        if(!info || !text) return;
+        const r = FinancialEngine.calculateAvailableToday(AppState);
+        if(r.periodInfo) {
+            const ps = r.periodInfo.periodStart.toLocaleDateString('gl-ES', {day:'numeric',month:'short'});
+            const pe = r.periodInfo.periodEnd.toLocaleDateString('gl-ES', {day:'numeric',month:'short'});
+            text.innerHTML = `📅 Período actual: <strong>${ps}</strong> → <strong>${pe}</strong><br>📍 Día ${r.periodInfo.dayInPeriod} de ${r.periodInfo.totalDays} (quedan ${r.periodInfo.remainingDays} días)`;
+            info.style.display = 'block';
+        }
+    }
+    function savePayDay() {
+        const val = parseInt($('payDayInput').value) || 1;
+        const payDay = Math.max(1, Math.min(31, val));
+        AppState.payDay = payDay;
+        localStorage.setItem('cartinos_payDay', payDay);
+        $('payDayInput').value = payDay;
+        updatePeriodInfo();
+        updateAllUI();
+        toast(`Período configurado: día ${payDay} 📅`);
     }
     // INITIALIZATION
     async function init() {
@@ -1520,6 +1616,7 @@
             $('btnImport')?.addEventListener('click', () => $('importFile').click());
             $('importFile')?.addEventListener('change', importData);
             $('btnReset')?.addEventListener('click', resetData);
+            $('btnSavePayDay')?.addEventListener('click', savePayDay);
 
             // Forms
             $('accountForm').addEventListener('submit', saveAccount);
