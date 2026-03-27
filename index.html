@@ -52,6 +52,7 @@
             padding: 0;
             box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
+            font-size: 16px;
         }
 
         html {
@@ -1207,15 +1208,36 @@
             color: var(--text-muted);
             white-space: nowrap;
         }
+
         #btnVoiceExpense.listening {
-    background: rgba(255,71,87,0.3);
-    border-color: #ff4757;
-    animation: pulse 1s infinite;
-}
-@keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-}
+            background: rgba(255, 71, 87, 0.3);
+            border-color: #ff4757;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+        }
+
+        .collapsible-content {
+            overflow: hidden;
+            max-height: 2000px;
+            transition: max-height 0.35s ease, opacity 0.3s ease;
+            opacity: 1;
+        }
+
+        .collapsible-content.collapsed {
+            max-height: 0;
+            opacity: 0;
+        }
     </style>
 </head>
 
@@ -1314,185 +1336,323 @@
         </nav>
         <!-- SECTIONS -->
         <section class="section active" id="section-dashboard">
-    <div class="card">
-        <div class="card-header">
-            <h2 class="card-title">📅 Período Actual</h2>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">
-            <div style="text-align:center;padding:8px;background:rgba(57,255,20,0.08);border-radius:8px;">
-                <div class="stat-value" style="color:var(--accent-green);font-size:1rem;" id="statIncomePeriod">—</div>
-                <div class="stat-label">Ingresos período</div>
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">📅 Período Actual</h2>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">
+                    <div style="text-align:center;padding:8px;background:rgba(57,255,20,0.08);border-radius:8px;">
+                        <div class="stat-value" style="color:var(--accent-green);font-size:1rem;" id="statIncomePeriod">
+                            —</div>
+                        <div class="stat-label">Ingresos período</div>
+                    </div>
+                    <div style="text-align:center;padding:8px;background:rgba(255,110,199,0.08);border-radius:8px;">
+                        <div class="stat-value" style="color:var(--accent-pink);font-size:1rem;" id="statExpensePeriod">
+                            —</div>
+                        <div class="stat-label">Gastos período</div>
+                    </div>
+                    <div style="text-align:center;padding:8px;background:rgba(255,217,61,0.08);border-radius:8px;">
+                        <div class="stat-value" style="color:var(--accent-yellow);font-size:1rem;" id="statRecurring">
+                            0,00 €</div>
+                        <div class="stat-label">Fixos pendentes</div>
+                    </div>
+                    <div style="text-align:center;padding:8px;background:rgba(0,245,255,0.08);border-radius:8px;">
+                        <div class="stat-value" style="color:var(--accent-cyan);font-size:1rem;" id="statDailyAvg">0,00
+                            €</div>
+                        <div class="stat-label">Media diaria</div>
+                    </div>
+                    <div style="text-align:center;padding:8px;background:rgba(57,255,20,0.05);border-radius:8px;">
+                        <div class="stat-value" style="color:var(--accent-green);font-size:1rem;" id="statIncomeMonth">
+                            0,00 €</div>
+                        <div class="stat-label">Ingresos mes</div>
+                    </div>
+                    <div style="text-align:center;padding:8px;background:rgba(255,110,199,0.05);border-radius:8px;">
+                        <div class="stat-value" style="color:var(--accent-pink);font-size:1rem;" id="statExpenseMonth">
+                            0,00 €</div>
+                        <div class="stat-label">Gastos mes</div>
+                    </div>
+                </div>
             </div>
-            <div style="text-align:center;padding:8px;background:rgba(255,110,199,0.08);border-radius:8px;">
-                <div class="stat-value" style="color:var(--accent-pink);font-size:1rem;" id="statExpensePeriod">—</div>
-                <div class="stat-label">Gastos período</div>
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">📊 Evolución</h2>
+                </div>
+                <div class="chart-container"><canvas id="dashboardChart"></canvas></div>
             </div>
-            <div style="text-align:center;padding:8px;background:rgba(255,217,61,0.08);border-radius:8px;">
-                <div class="stat-value" style="color:var(--accent-yellow);font-size:1rem;" id="statRecurring">0,00 €</div>
-                <div class="stat-label">Fixos pendentes</div>
+            <div class="card" id="trafficLightCard" style="display:none;">
+                <div class="card-header">
+                    <h2 class="card-title">🚦 Alertas de Categorías</h2>
+                </div>
+                <div id="trafficLightCompact"></div>
             </div>
-            <div style="text-align:center;padding:8px;background:rgba(0,245,255,0.08);border-radius:8px;">
-                <div class="stat-value" style="color:var(--accent-cyan);font-size:1rem;" id="statDailyAvg">0,00 €</div>
-                <div class="stat-label">Media diaria</div>
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">🕐 Movementos</h2>
+                </div>
+                <div id="recentMovements">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📊</div>
+                        <p>Sen movementos</p>
+                    </div>
+                </div>
             </div>
-            <div style="text-align:center;padding:8px;background:rgba(57,255,20,0.05);border-radius:8px;">
-                <div class="stat-value" style="color:var(--accent-green);font-size:1rem;" id="statIncomeMonth">0,00 €</div>
-                <div class="stat-label">Ingresos mes</div>
-            </div>
-            <div style="text-align:center;padding:8px;background:rgba(255,110,199,0.05);border-radius:8px;">
-                <div class="stat-value" style="color:var(--accent-pink);font-size:1rem;" id="statExpenseMonth">0,00 €</div>
-                <div class="stat-label">Gastos mes</div>
-            </div>
-        </div>
-    </div>
-    <div class="card">
-        <div class="card-header">
-            <h2 class="card-title">📊 Evolución</h2>
-        </div>
-        <div class="chart-container"><canvas id="dashboardChart"></canvas></div>
-    </div>
-    <div class="card">
-        <div class="card-header">
-            <h2 class="card-title">🕐 Movementos</h2>
-        </div>
-        <div id="recentMovements">
-            <div class="empty-state">
-                <div class="empty-state-icon">📊</div>
-                <p>Sen movementos</p>
-            </div>
-        </div>
-    </div>
-</section>
+        </section>
 
         <section class="section" id="section-accounts">
-    <div class="card">
-        <div class="card-header">
-            <h2 class="card-title">🏦 Contas</h2>
-            <button class="btn btn-primary" id="btnNewAccount">+ Nova</button>
-        </div>
-        <div id="accountsList">
-            <div class="empty-state"><div class="empty-state-icon">🏦</div><p>Engade a túa primeira conta</p></div>
-        </div>
-    </div>
-    <div class="card">
-        <div class="card-header" style="cursor:pointer;" onclick="toggleCollapsible('incomesCollapsible', 'incomesChevron')">
-            <h2 class="card-title">💰 Ingresos</h2>
-            <div style="display:flex;gap:8px;align-items:center;">
-                <button class="btn btn-primary" id="btnNewIncome" onclick="event.stopPropagation();openModal('incomeModal')">+ Novo</button>
-                <span id="incomesChevron" style="color:var(--accent-cyan);font-size:1.2rem;transition:transform 0.3s;">▼</span>
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">🏦 Contas</h2>
+                    <button class="btn btn-primary" id="btnNewAccount">+ Nova</button>
+                </div>
+                <div id="accountsList">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🏦</div>
+                        <p>Engade a túa primeira conta</p>
+                    </div>
+                </div>
             </div>
-        </div>
-        <div id="incomesCollapsible" style="display:none;">
-            <div id="incomesList">
-                <div class="empty-state"><div class="empty-state-icon">💰</div><p>Rexistra ingresos</p></div>
+            <div class="card">
+                <div class="card-header" style="cursor:pointer;"
+                    onclick="toggleCollapsible('incomesCollapsible', 'incomesChevron')">
+                    <h2 class="card-title">💰 Ingresos</h2>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <button class="btn btn-primary" id="btnNewIncome"
+                            onclick="event.stopPropagation();openModal('incomeModal')">+ Novo</button>
+                        <span id="incomesChevron"
+                            style="color:var(--accent-cyan);font-size:1.2rem;transition:transform 0.3s;">▼</span>
+                    </div>
+                </div>
+                <div id="incomesCollapsible" style="display:none;">
+                    <div id="incomesList">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">💰</div>
+                            <p>Rexistra ingresos</p>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
-    <div class="card">
-        <div class="card-header" style="cursor:pointer;" onclick="toggleCollapsible('expensesCollapsible', 'expensesChevron')">
-            <h2 class="card-title">🛒 Gastos</h2>
-            <div style="display:flex;gap:8px;align-items:center;">
-                <button class="btn btn-primary" id="btnNewExpense" onclick="event.stopPropagation();openModal('expenseModal')">+ Novo</button>
-                <span id="expensesChevron" style="color:var(--accent-cyan);font-size:1.2rem;transition:transform 0.3s;">▼</span>
+            <div class="card">
+                <div class="card-header" style="cursor:pointer;"
+                    onclick="toggleCollapsible('expensesCollapsible', 'expensesChevron')">
+                    <h2 class="card-title">🛒 Gastos</h2>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <button class="btn btn-primary" id="btnNewExpense"
+                            onclick="event.stopPropagation();openModal('expenseModal')">+ Novo</button>
+                        <span id="expensesChevron"
+                            style="color:var(--accent-cyan);font-size:1.2rem;transition:transform 0.3s;">▼</span>
+                    </div>
+                </div>
+                <div id="expensesCollapsible" style="display:none;">
+                    <div id="expensesList">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">🛒</div>
+                            <p>Rexistra gastos</p>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
-        <div id="expensesCollapsible" style="display:none;">
-            <div id="expensesList">
-                <div class="empty-state"><div class="empty-state-icon">🛒</div><p>Rexistra gastos</p></div>
-            </div>
-        </div>
-    </div>
-</section>
+        </section>
 
         <section class="section" id="section-recurring">
-    <div class="card">
-        <div class="card-header">
-            <h2 class="card-title">🔄 Gastos Fixos</h2>
-            <button class="btn btn-primary" id="btnNewRecurring">+ Novo</button>
-        </div>
-        <div id="recurringList">
-            <div class="empty-state"><div class="empty-state-icon">🔄</div><p>Configura gastos fixos</p></div>
-        </div>
-    </div>
-    <div class="card">
-        <div class="card-header">
-            <h2 class="card-title">🎯 Metas de Aforro</h2>
-            <button class="btn btn-primary" id="btnNewSavings">+ Nova</button>
-        </div>
-        <div id="savingsAlerts"></div>
-        <div id="savingsList">
-            <div class="empty-state"><div class="empty-state-icon">🎯</div><p>Define metas de aforro</p></div>
-        </div>
-    </div>
-    <div class="card">
-        <div class="card-header">
-            <h2 class="card-title">💳 Débedas</h2>
-            <button class="btn btn-primary" id="btnNewDebt">+ Nova</button>
-        </div>
-        <p style="color:var(--text-muted);margin-bottom:12px;font-size:0.8rem;">ℹ️ Non afectan ao dispoñible</p>
-        <div id="debtsList">
-            <div class="empty-state"><div class="empty-state-icon">💳</div><p>Rexistra débedas</p></div>
-        </div>
-    </div>
-</section>
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">🔄 Gastos Fixos</h2>
+                    <button class="btn btn-primary" id="btnNewRecurring">+ Novo</button>
+                </div>
+                <div id="recurringList">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🔄</div>
+                        <p>Configura gastos fixos</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">🎯 Metas de Aforro</h2>
+                    <button class="btn btn-primary" id="btnNewSavings">+ Nova</button>
+                </div>
+                <div id="savingsAlerts"></div>
+                <div id="savingsList">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🎯</div>
+                        <p>Define metas de aforro</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">💳 Débedas</h2>
+                    <button class="btn btn-primary" id="btnNewDebt">+ Nova</button>
+                </div>
+                <p style="color:var(--text-muted);margin-bottom:12px;font-size:0.8rem;">ℹ️ Non afectan ao dispoñible</p>
+                <div id="debtsList">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">💳</div>
+                        <p>Rexistra débedas</p>
+                    </div>
+                </div>
+            </div>
+        </section>
 
         <section class="section" id="section-analysis">
-    <div class="card">
-        <div class="card-header">
-            <h2 class="card-title">📈 Indicadores Financeiros</h2>
-        </div>
-        <div class="secondary-info" style="grid-template-columns: repeat(3, 1fr); gap: 10px;">
-            <div class="info-item"><div class="info-label">Taxa Aforro</div><div class="info-value" id="kpiSavingsRate" style="color:var(--accent-green);">—</div></div>
-            <div class="info-item"><div class="info-label">Fixos/Ingresos</div><div class="info-value" id="kpiFixedRatio" style="color:var(--accent-yellow);">—</div></div>
-            <div class="info-item"><div class="info-label">Cobertura</div><div class="info-value" id="kpiCoverage" style="color:var(--accent-cyan);">—</div></div>
-            <div class="info-item"><div class="info-label">Gasto Diario Real</div><div class="info-value" id="kpiDailyReal" style="color:var(--accent-cyan);">—</div></div>
-            <div class="info-item"><div class="info-label">Tendencia</div><div class="info-value" id="kpiTrend" style="color:var(--accent-yellow);">—</div></div>
-            <div class="info-item"><div class="info-label">Días Ata Cero</div><div class="info-value" id="kpiDaysToZero" style="color:var(--accent-pink);">—</div></div>
-            <div class="info-item"><div class="info-label">Aforro Fondo</div><div class="info-value" id="kpiEmergencyFund" style="color:var(--accent-green);">—</div></div>
-            <div class="info-item"><div class="info-label">Liquidez</div><div class="info-value" id="kpiLiquidity" style="color:var(--accent-cyan);">—</div></div>
-            <div class="info-item"><div class="info-label">Discrecional</div><div class="info-value" id="kpiDiscretionary" style="color:var(--accent-purple);">—</div></div>
-            <div class="info-item"><div class="info-label">Patrimonio Neto</div><div class="info-value" id="kpiNetWorth" style="color:var(--accent-green);">—</div></div>
-            <div class="info-item"><div class="info-label">Taxa Aforro Total</div><div class="info-value" id="kpiTotalSavingsRate" style="color:var(--accent-green);">—</div></div>
-            <div class="info-item"><div class="info-label">Débeda Sostible</div><div class="info-value" id="kpiSustainableDebt" style="color:var(--accent-yellow);">—</div></div>
-        </div>
-    </div>
-    <div class="card">
-        <div class="card-header"><h2 class="card-title">🔍 Patróns</h2></div>
-        <div id="patternAnalysis">
-            <div class="empty-state"><div class="empty-state-icon">🔍</div><p>Necesítanse máis datos</p></div>
-        </div>
-    </div>
-    <div class="card">
-        <div class="card-header"><h2 class="card-title">📈 Comparativa</h2></div>
-        <div class="chart-container"><canvas id="comparisonChart"></canvas></div>
-    </div>
-    <div class="card">
-        <div class="card-header"><h2 class="card-title">📊 Categorías</h2></div>
-        <div class="chart-container" style="height:220px;"><canvas id="categoryChart"></canvas></div>
-    </div>
-    <div class="card">
-        <div class="card-header"><h2 class="card-title">🔮 Simulador</h2></div>
-        <div class="simulator-horizon" id="horizonBtns">
-            <button class="horizon-btn active" data-months="3">3m</button>
-            <button class="horizon-btn" data-months="6">6m</button>
-            <button class="horizon-btn" data-months="12">1a</button>
-            <button class="horizon-btn" data-months="24">2a</button>
-            <button class="horizon-btn" data-months="60">5a</button>
-        </div>
-        <div id="simulatorAlerts"></div>
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-value" id="simBalance" style="color:var(--accent-cyan)">0,00 €</div>
-                <div class="stat-label">Saldo</div>
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">📈 Indicadores Financeiros</h2>
+                </div>
+                <div class="secondary-info" style="grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                    <div class="info-item">
+                        <div class="info-label">Taxa Aforro</div>
+                        <div class="info-value" id="kpiSavingsRate" style="color:var(--accent-green);">—</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Fixos/Ingresos</div>
+                        <div class="info-value" id="kpiFixedRatio" style="color:var(--accent-yellow);">—</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Cobertura</div>
+                        <div class="info-value" id="kpiCoverage" style="color:var(--accent-cyan);">—</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Gasto Diario Real</div>
+                        <div class="info-value" id="kpiDailyReal" style="color:var(--accent-cyan);">—</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Tendencia</div>
+                        <div class="info-value" id="kpiTrend" style="color:var(--accent-yellow);">—</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Días Ata Cero</div>
+                        <div class="info-value" id="kpiDaysToZero" style="color:var(--accent-pink);">—</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Aforro Fondo</div>
+                        <div class="info-value" id="kpiEmergencyFund" style="color:var(--accent-green);">—</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Liquidez</div>
+                        <div class="info-value" id="kpiLiquidity" style="color:var(--accent-cyan);">—</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Discrecional</div>
+                        <div class="info-value" id="kpiDiscretionary" style="color:var(--accent-purple);">—</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Patrimonio Neto</div>
+                        <div class="info-value" id="kpiNetWorth" style="color:var(--accent-green);">—</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Taxa Aforro Total</div>
+                        <div class="info-value" id="kpiTotalSavingsRate" style="color:var(--accent-green);">—</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Débeda Sostible</div>
+                        <div class="info-value" id="kpiSustainableDebt" style="color:var(--accent-yellow);">—</div>
+                    </div>
+                </div>
             </div>
-            <div class="stat-card">
-                <div class="stat-value" id="simSavings" style="color:var(--accent-green)">0,00 €</div>
-                <div class="stat-label">Aforro</div>
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">🔍 Patróns</h2>
+                </div>
+                <div id="patternAnalysis">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🔍</div>
+                        <p>Necesítanse máis datos</p>
+                    </div>
+                </div>
             </div>
-        </div>
-        <div class="chart-container"><canvas id="simulatorChart"></canvas></div>
-    </div>
-</section>
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">📅 Semana Actual</h2>
+                </div>
+                <div id="weeklyChartInfo"
+                    style="font-size:0.75rem;color:var(--text-muted);margin-bottom:8px;text-align:center;"></div>
+                <div class="chart-container" style="height:200px;"><canvas id="weeklyChart"></canvas></div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">💸 Cash Flow Diario</h2>
+                </div>
+                <div class="simulator-horizon" id="cashflowBtns">
+                    <button class="horizon-btn active" data-days="30">30d</button>
+                    <button class="horizon-btn" data-days="60">60d</button>
+                </div>
+                <div id="cashflowInfo"
+                    style="font-size:0.75rem;color:var(--text-muted);margin-bottom:8px;text-align:center;"></div>
+                <div class="chart-container" style="height:200px;"><canvas id="cashflowChart"></canvas></div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">🌊 Fluxo Real vs Proxectado</h2>
+                </div>
+                <div id="realvsprojectInfo"
+                    style="font-size:0.75rem;color:var(--text-muted);margin-bottom:8px;text-align:center;"></div>
+                <div class="chart-container" style="height:200px;"><canvas id="realvsprojectChart"></canvas></div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">🏦 Evolución por Conta</h2>
+                </div>
+                <div id="accountsChartInfo"
+                    style="font-size:0.75rem;color:var(--text-muted);margin-bottom:8px;text-align:center;"></div>
+                <div class="chart-container" style="height:220px;"><canvas id="accountsChart"></canvas></div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">📈 Comparativa</h2>
+                </div>
+                <div class="chart-container"><canvas id="comparisonChart"></canvas></div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">📊 Comparativa de Períodos</h2>
+                </div>
+                <div id="periodsChartInfo"
+                    style="font-size:0.75rem;color:var(--text-muted);margin-bottom:8px;text-align:center;"></div>
+                <div class="chart-container" style="height:220px;"><canvas id="periodsChart"></canvas></div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">📊 Categorías</h2>
+                </div>
+                <div class="chart-container" style="height:220px;"><canvas id="categoryChart"></canvas></div>
+                <div id="trafficLightFull" style="margin-top:15px;"></div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">🔮 Simulador / Planificador</h2>
+                </div>
+                <div class="form-group" style="margin-bottom:10px;">
+                    <label class="form-label" style="font-size:0.75rem;">Ingreso mensual personalizado (opcional — se
+                        non, usa a media dos últimos 3 meses)</label>
+                    <input type="number" class="form-input" id="simulatorCustomIncome"
+                        placeholder="Deixa baleiro para usar a media histórica" step="0.01" inputmode="decimal"
+                        onchange="updateSimulator()">
+                </div>
+                <div id="simulatorBase"
+                    style="margin-bottom:10px;padding:8px 12px;background:rgba(0,245,255,0.06);border-radius:8px;font-size:0.75rem;color:var(--text-muted);">
+                </div>
+                <div class="simulator-horizon" id="horizonBtns">
+                    <button class="horizon-btn active" data-months="3">3m</button>
+                    <button class="horizon-btn" data-months="6">6m</button>
+                    <button class="horizon-btn" data-months="12">1a</button>
+                    <button class="horizon-btn" data-months="24">2a</button>
+                    <button class="horizon-btn" data-months="60">5a</button>
+                </div>
+                <div id="simulatorAlerts"></div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="simBalance" style="color:var(--accent-cyan)">0,00 €</div>
+                        <div class="stat-label">Saldo final</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="simSavings" style="color:var(--accent-green)">0,00 €</div>
+                        <div class="stat-label">Aforro final</div>
+                    </div>
+                </div>
+                <div class="chart-container"><canvas id="simulatorChart"></canvas></div>
+            </div>
+        </section>
 
         <section class="section" id="section-calendar">
             <div class="card">
@@ -1513,125 +1673,203 @@
         </section>
 
         <section class="section" id="section-settings">
-    <div class="card">
-        <div class="card-header">
-            <h2 class="card-title">📅 Período e Peche</h2>
-        </div>
-        <p style="color:var(--text-muted);margin-bottom:12px;font-size:0.8rem;">Configura o día que cobras para calcular o ciclo correctamente</p>
-        <div class="form-group">
-            <label class="form-label">Día de cobro</label>
-            <input type="number" class="form-input" id="payDayInput" min="1" max="31" placeholder="Ex: 1, 15, 28..." value="1" inputmode="numeric">
-        </div>
-        <button class="btn btn-primary" id="btnSavePayDay" style="width:100%;">Gardar período</button>
-        <div id="periodInfo" style="margin-top:12px;padding:10px;background:rgba(0,245,255,0.1);border-radius:8px;font-size:0.8rem;color:var(--text-secondary);display:none;">
-            <span id="periodInfoText"></span>
-        </div>
-        <hr style="border:none;border-top:1px solid rgba(255,110,199,0.2);margin:20px 0;">
-        <p style="color:var(--text-muted);margin-bottom:12px;font-size:0.8rem;">Arquiva os gastos e ingresos do período actual e comeza o novo período limpo.</p>
-        <div id="periodCloseInfo" style="margin-bottom:12px;padding:10px;background:rgba(0,245,255,0.08);border-radius:8px;font-size:0.8rem;color:var(--text-secondary);"></div>
-        <button class="btn btn-primary" id="btnClosePeriod" style="width:100%;background:linear-gradient(135deg,var(--accent-cyan),var(--accent-green));">📦 Pechar Período Actual</button>
-    </div>
-    <div class="card">
-        <div class="card-header" style="cursor:pointer;" onclick="toggleCollapsible('catsCollapsible', 'catsChevron')">
-            <h2 class="card-title">🏷️ Categorías</h2>
-            <span id="catsChevron" style="color:var(--accent-cyan);font-size:1.2rem;transition:transform 0.3s;">▼</span>
-        </div>
-        <div id="catsCollapsible" style="display:none;">
-            <div style="margin-bottom:15px;">
-                <div class="card-header" style="padding:0 0 10px 0;">
-                    <h3 style="font-size:0.8rem;color:var(--accent-pink);">Gasto</h3>
-                    <button class="btn btn-primary" id="btnAddExpenseCat" style="min-height:32px;padding:6px 10px;font-size:0.75rem;">+ Nova</button>
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">📅 Período e Peche</h2>
                 </div>
-                <div id="expenseCatList"></div>
-            </div>
-            <div style="margin-bottom:15px;">
-                <div class="card-header" style="padding:0 0 10px 0;">
-                    <h3 style="font-size:0.8rem;color:var(--accent-green);">Ingreso</h3>
-                    <button class="btn btn-primary" id="btnAddIncomeCat" style="min-height:32px;padding:6px 10px;font-size:0.75rem;">+ Nova</button>
+                <p style="color:var(--text-muted);margin-bottom:12px;font-size:0.8rem;">Configura o día que cobras para
+                    calcular o ciclo correctamente</p>
+                <div class="form-group">
+                    <label class="form-label">Día de cobro</label>
+                    <input type="number" class="form-input" id="payDayInput" min="1" max="31"
+                        placeholder="Ex: 1, 15, 28..." value="1" inputmode="numeric">
                 </div>
-                <div id="incomeCatList"></div>
-            </div>
-            <div>
-                <div class="card-header" style="padding:0 0 10px 0;">
-                    <h3 style="font-size:0.8rem;color:var(--accent-yellow);">Fixos</h3>
-                    <button class="btn btn-primary" id="btnAddRecurringCat" style="min-height:32px;padding:6px 10px;font-size:0.75rem;">+ Nova</button>
+                <button class="btn btn-primary" id="btnSavePayDay" style="width:100%;">Gardar período</button>
+                <div id="periodInfo"
+                    style="margin-top:12px;padding:10px;background:rgba(0,245,255,0.1);border-radius:8px;font-size:0.8rem;color:var(--text-secondary);display:none;">
+                    <span id="periodInfoText"></span>
                 </div>
-                <div id="recurringCatList"></div>
+                <hr style="border:none;border-top:1px solid rgba(255,110,199,0.2);margin:20px 0;">
+                <p style="color:var(--text-muted);margin-bottom:12px;font-size:0.8rem;">Arquiva os gastos e ingresos do
+                    período actual e comeza o novo período limpo.</p>
+                <div id="periodCloseInfo"
+                    style="margin-bottom:12px;padding:10px;background:rgba(0,245,255,0.08);border-radius:8px;font-size:0.8rem;color:var(--text-secondary);">
+                </div>
+                <button class="btn btn-primary" id="btnClosePeriod"
+                    style="width:100%;background:linear-gradient(135deg,var(--accent-cyan),var(--accent-green));">📦
+                    Pechar Período Actual</button>
             </div>
-        </div>
-    </div>
-    <div class="card">
-        <div class="card-header"><h2 class="card-title">🔥 Modo Aforro Extremo</h2></div>
-        <p style="color:var(--text-muted);margin-bottom:12px;font-size:0.8rem;">Bloquea gastos non esenciais cando estás en negativo</p>
-        <div class="form-group">
-            <div class="checkbox-container" id="checkExtremeSaving">
-                <div class="checkbox-custom" id="extremeSavingCheckbox"></div>
-                <span>Activar modo aforro extremo</span>
+            <div class="card" id="travelModeCard">
+                <div class="card-header">
+                    <h2 class="card-title">✈️ Modo Viaxe</h2>
+                </div>
+                <div id="travelModeActive"
+                    style="display:none;margin-bottom:15px;padding:12px;background:rgba(0,245,255,0.08);border-radius:10px;">
+                    <div style="font-family:'Orbitron',monospace;font-size:0.8rem;color:var(--accent-cyan);margin-bottom:6px;"
+                        id="travelModeTitle">Viaxe activa</div>
+                    <div style="font-size:0.85rem;color:var(--text-secondary);" id="travelModeInfo"></div>
+                    <div style="margin-top:10px;display:flex;gap:8px;">
+                        <button class="btn btn-danger" style="flex:1;" onclick="endTravelMode()">🏁 Rematar
+                            Viaxe</button>
+                    </div>
+                </div>
+                <div id="travelModeForm">
+                    <p style="color:var(--text-muted);margin-bottom:12px;font-size:0.8rem;">Crea un período temporal con
+                        orzamento propio sen alterar o teu ciclo de cobro normal.</p>
+                    <div class="form-group">
+                        <label class="form-label">Nome da viaxe</label>
+                        <input type="text" class="form-input" id="travelName" placeholder="Ex: Viaxe Portugal">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Data inicio</label>
+                            <input type="date" class="form-input" id="travelStart">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Data fin</label>
+                            <input type="date" class="form-input" id="travelEnd">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Orzamento total (€)</label>
+                        <input type="number" class="form-input" id="travelBudget" placeholder="Ex: 300" step="0.01"
+                            inputmode="decimal">
+                    </div>
+                    <button class="btn btn-primary"
+                        style="width:100%;background:linear-gradient(135deg,var(--accent-cyan),var(--accent-purple));"
+                        onclick="startTravelMode()">✈️ Iniciar Modo Viaxe</button>
+                </div>
             </div>
-        </div>
-        <div id="extremeSavingOptions" style="display:none;">
-            <div class="form-group">
-                <label class="form-label">Límite diario (0 = sen límite)</label>
-                <input type="number" class="form-input" id="dailyLimitInput" min="0" step="0.01" placeholder="0.00" value="0" inputmode="decimal">
+            <div class="card">
+                <div class="card-header" style="cursor:pointer;"
+                    onclick="toggleCollapsible('catsCollapsible', 'catsChevron')">
+                    <h2 class="card-title">🏷️ Categorías</h2>
+                    <span id="catsChevron"
+                        style="color:var(--accent-cyan);font-size:1.2rem;transition:transform 0.3s;">▼</span>
+                </div>
+                <div id="catsCollapsible" style="display:none;">
+                    <div style="margin-bottom:15px;">
+                        <div class="card-header" style="padding:0 0 10px 0;">
+                            <h3 style="font-size:0.8rem;color:var(--accent-pink);">Gasto</h3>
+                            <button class="btn btn-primary" id="btnAddExpenseCat"
+                                style="min-height:32px;padding:6px 10px;font-size:0.75rem;">+ Nova</button>
+                        </div>
+                        <div id="expenseCatList"></div>
+                    </div>
+                    <div style="margin-bottom:15px;">
+                        <div class="card-header" style="padding:0 0 10px 0;">
+                            <h3 style="font-size:0.8rem;color:var(--accent-green);">Ingreso</h3>
+                            <button class="btn btn-primary" id="btnAddIncomeCat"
+                                style="min-height:32px;padding:6px 10px;font-size:0.75rem;">+ Nova</button>
+                        </div>
+                        <div id="incomeCatList"></div>
+                    </div>
+                    <div>
+                        <div class="card-header" style="padding:0 0 10px 0;">
+                            <h3 style="font-size:0.8rem;color:var(--accent-yellow);">Fixos</h3>
+                            <button class="btn btn-primary" id="btnAddRecurringCat"
+                                style="min-height:32px;padding:6px 10px;font-size:0.75rem;">+ Nova</button>
+                        </div>
+                        <div id="recurringCatList"></div>
+                    </div>
+                </div>
             </div>
-            <p style="color:var(--text-muted);margin-bottom:8px;font-size:0.75rem;">Categorías esenciais: Alimentación, Saúde, Transporte, Vivenda</p>
-        </div>
-        <button class="btn btn-secondary" id="btnSaveExtremeSaving" style="width:100%;margin-top:10px;">Gardar configuración</button>
-    </div>
-    <div class="card">
-        <div class="card-header"><h2 class="card-title">🔔 Alertas e Notificacións</h2></div>
-        <div class="form-group">
-            <label class="form-label">Días antes de cobrar para alertar</label>
-            <input type="number" class="form-input" id="alertDaysInput" min="0" max="15" value="3" inputmode="numeric">
-        </div>
-        <div class="form-group">
-            <label class="form-label">% máximo de gasto antes da metade do período</label>
-            <input type="number" class="form-input" id="alertPercentageInput" min="0" max="100" value="50" inputmode="numeric">
-        </div>
-        <div class="form-group">
-            <div class="checkbox-container" id="checkAlertGoals">
-                <div class="checkbox-custom checked" id="alertGoalsCheckbox"></div>
-                <span>Alertar sobre obxectivos en risco</span>
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">🔥 Modo Aforro Extremo</h2>
+                </div>
+                <p style="color:var(--text-muted);margin-bottom:12px;font-size:0.8rem;">Bloquea gastos non esenciais
+                    cando estás en negativo</p>
+                <div class="form-group">
+                    <div class="checkbox-container" id="checkExtremeSaving">
+                        <div class="checkbox-custom" id="extremeSavingCheckbox"></div>
+                        <span>Activar modo aforro extremo</span>
+                    </div>
+                </div>
+                <div id="extremeSavingOptions" style="display:none;">
+                    <div class="form-group">
+                        <label class="form-label">Límite diario (0 = sen límite)</label>
+                        <input type="number" class="form-input" id="dailyLimitInput" min="0" step="0.01"
+                            placeholder="0.00" value="0" inputmode="decimal">
+                    </div>
+                    <p style="color:var(--text-muted);margin-bottom:8px;font-size:0.75rem;">Categorías esenciais:
+                        Alimentación, Saúde, Transporte, Vivenda</p>
+                </div>
+                <button class="btn btn-secondary" id="btnSaveExtremeSaving" style="width:100%;margin-top:10px;">Gardar
+                    configuración</button>
             </div>
-        </div>
-        <button class="btn btn-secondary" id="btnSaveAlerts" style="width:100%;">Gardar alertas</button>
-        <hr style="border:none;border-top:1px solid rgba(255,110,199,0.2);margin:20px 0;">
-        <p style="color:var(--text-muted);margin-bottom:12px;font-size:0.8rem;">Recibe notificacións no navegador</p>
-        <button class="btn btn-primary" id="btnRequestPush" style="width:100%;">Activar notificacións</button>
-        <p id="pushStatus" style="margin-top:10px;font-size:0.8rem;color:var(--text-muted);"></p>
-    </div>
-    <div class="card">
-        <div class="card-header">
-            <h2 class="card-title">📚 Historial de Períodos</h2>
-            <div style="display:flex;gap:8px;">
-                <button class="btn btn-secondary" id="btnSelectPeriods" style="padding:6px 10px;font-size:0.75rem;min-height:36px;">☑ Seleccionar</button>
-                <button class="btn btn-primary" id="btnExportSelected" style="padding:6px 10px;font-size:0.75rem;min-height:36px;display:none;">💾 Exportar</button>
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">🔔 Alertas e Notificacións</h2>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Días antes de cobrar para alertar</label>
+                    <input type="number" class="form-input" id="alertDaysInput" min="0" max="15" value="3"
+                        inputmode="numeric">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">% máximo de gasto antes da metade do período</label>
+                    <input type="number" class="form-input" id="alertPercentageInput" min="0" max="100" value="50"
+                        inputmode="numeric">
+                </div>
+                <div class="form-group">
+                    <div class="checkbox-container" id="checkAlertGoals">
+                        <div class="checkbox-custom checked" id="alertGoalsCheckbox"></div>
+                        <span>Alertar sobre obxectivos en risco</span>
+                    </div>
+                </div>
+                <button class="btn btn-secondary" id="btnSaveAlerts" style="width:100%;">Gardar alertas</button>
+                <hr style="border:none;border-top:1px solid rgba(255,110,199,0.2);margin:20px 0;">
+                <p style="color:var(--text-muted);margin-bottom:12px;font-size:0.8rem;">Recibe notificacións no
+                    navegador</p>
+                <button class="btn btn-primary" id="btnRequestPush" style="width:100%;">Activar notificacións</button>
+                <p id="pushStatus" style="margin-top:10px;font-size:0.8rem;color:var(--text-muted);"></p>
             </div>
-        </div>
-        <div id="periodHistoryList">
-            <div class="empty-state"><div class="empty-state-icon">📚</div><p>Sen períodos pechados</p></div>
-        </div>
-    </div>
-    <div class="card">
-        <div class="card-header"><h2 class="card-title">💾 Datos</h2></div>
-        <div class="btn-group">
-            <button class="btn btn-primary" id="btnExportJSON">JSON</button>
-            <button class="btn btn-secondary" id="btnExportCSV">CSV</button>
-            <button class="btn btn-secondary" id="btnExportPDF">PDF</button>
-            <button class="btn btn-secondary" id="btnImport">Importar</button>
-            <input type="file" id="importFile" accept=".json" style="display:none;">
-            <button class="btn btn-danger" id="btnReset">Borrar</button>
-        </div>
-    </div>
-    <div class="card">
-        <div class="card-header"><h2 class="card-title">⚙️ Estado</h2></div>
-        <div id="systemStatus"></div>
-    </div>
-    <div class="card">
-        <div class="card-header"><h2 class="card-title">ℹ️ Información</h2></div>
-        <p style="color:var(--text-secondary);line-height:1.8;"><strong>Cartiños v4.0</strong><br>Xestión financeira persoal en galego.<br>Feito con 💙 dende Galicia.<br>Biquiños 😘</p>
-    </div>
-</section>
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">📚 Historial de Períodos</h2>
+                    <div style="display:flex;gap:8px;">
+                        <button class="btn btn-secondary" id="btnSelectPeriods"
+                            style="padding:6px 10px;font-size:0.75rem;min-height:36px;">☑ Seleccionar</button>
+                        <button class="btn btn-primary" id="btnExportSelected"
+                            style="padding:6px 10px;font-size:0.75rem;min-height:36px;display:none;">💾
+                            Exportar</button>
+                    </div>
+                </div>
+                <div id="periodHistoryList">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📚</div>
+                        <p>Sen períodos pechados</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">💾 Datos</h2>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="btnExportJSON">JSON</button>
+                    <button class="btn btn-secondary" id="btnExportCSV">CSV</button>
+                    <button class="btn btn-secondary" id="btnExportPDF">PDF</button>
+                    <button class="btn btn-secondary" id="btnImport">Importar</button>
+                    <input type="file" id="importFile" accept=".json" style="display:none;">
+                    <button class="btn btn-danger" id="btnReset">Borrar</button>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">⚙️ Estado</h2>
+                </div>
+                <div id="systemStatus"></div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">ℹ️ Información</h2>
+                </div>
+                <p style="color:var(--text-secondary);line-height:1.8;"><strong>Cartiños v4.0</strong><br>Xestión
+                    financeira persoal en galego.<br>Feito con 💙 dende Galicia.<br>Biquiños 😘</p>
+            </div>
+        </section>
 
     </div>
     <!-- MODALS -->
@@ -1674,13 +1912,15 @@
             <form id="incomeForm">
                 <input type="hidden" name="editId" value="">
                 <div class="form-group">
-    <label class="form-label">Descrición</label>
-    <div style="display:flex;gap:8px;align-items:center;">
-        <input type="text" class="form-input" name="description" placeholder="Ex: Supermercado" required style="flex:1;">
-        <button type="button" id="btnVoiceExpense" style="width:46px;height:48px;min-height:48px;border-radius:8px;border:1px solid rgba(255,110,199,0.3);background:var(--bg-tertiary);font-size:1.2rem;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.2s;">🎤</button>
-    </div>
-</div>
-                        <div class="form-row">
+                    <label class="form-label">Descrición</label>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <input type="text" class="form-input" name="description" placeholder="Ex: Supermercado" required
+                            style="flex:1;">
+                        <button type="button" id="btnVoiceIncome"
+                            style="width:46px;height:48px;min-height:48px;border-radius:8px;border:1px solid rgba(255,110,199,0.3);background:var(--bg-tertiary);font-size:1.2rem;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.2s;">🎤</button>
+                    </div>
+                </div>
+                <div class="form-row">
                     <div class="form-group"><label class="form-label">Cantidade</label><input type="number"
                             class="form-input" name="amount" placeholder="0.00" step="0.01" inputmode="decimal"
                             required></div>
@@ -1708,8 +1948,15 @@
             </div>
             <form id="expenseForm">
                 <input type="hidden" name="editId" value="">
-                <div class="form-group"><label class="form-label">Descrición</label><input type="text"
-                        class="form-input" name="description" placeholder="Ex: Supermercado" required></div>
+                <div class="form-group">
+                    <label class="form-label">Descrición</label>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <input type="text" class="form-input" name="description" placeholder="Ex: Supermercado" required
+                            style="flex:1;">
+                        <button type="button" id="btnVoiceExpense"
+                            style="width:46px;height:48px;min-height:48px;border-radius:8px;border:1px solid rgba(255,110,199,0.3);background:var(--bg-tertiary);font-size:1.2rem;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.2s;">🎤</button>
+                    </div>
+                </div>
                 <div class="form-row">
                     <div class="form-group"><label class="form-label">Cantidade</label><input type="number"
                             class="form-input" name="amount" placeholder="0.00" step="0.01" inputmode="decimal"
@@ -1761,6 +2008,14 @@
                         <option value="subscricions">📱 Subscricións</option>
                         <option value="outros">📦 Outros</option>
                     </select></div>
+                <div class="form-group" style="margin-bottom:15px;">
+                    <div style="display:flex;align-items:center;gap:10px;cursor:pointer;"
+                        onclick="this.querySelector('.checkbox-custom').classList.toggle('checked')">
+                        <div class="checkbox-custom" id="recurringVariableCheckbox"></div>
+                        <span style="font-size:0.85rem;color:var(--text-secondary);">Importe variable (luz, teléfono...)
+                            — usará a media dos últimos 3 pagos reais</span>
+                    </div>
+                </div>
                 <button type="submit" class="btn btn-primary" style="width: 100%;">Gardar</button>
             </form>
         </div>
@@ -1987,7 +2242,7 @@
                 };
             }
 
-            function simulateFinances(data, months) {
+            function simulateFinances(data, months, customIncome) {
                 const tb = calculateTotalBalance(data.accounts);
                 const ts = calculateTotalSavings(data.savingsGoals);
                 const today = getEffectiveDate(); today.setHours(0, 0, 0, 0);
@@ -2012,8 +2267,25 @@
                     }
                     return r2(last3.reduce((s, x) => s + x, 0) / last3.length);
                 })();
+                const finalMonthlyIncomes = (customIncome && customIncome > 0) ? customIncome : monthlyIncomes;
 
-                const fixedExpenses = (data.recurringExpenses || []).reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+                const fixedExpensesNow = (data.recurringExpenses || []).reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+                const fixedLast3 = (() => {
+                    const today2 = getEffectiveDate();
+                    const last3 = [];
+                    for (let i = 1; i <= 3; i++) {
+                        const m = new Date(today2.getFullYear(), today2.getMonth() - i, 1);
+                        const total = (data.expenses || []).filter(x => {
+                            if (!x || !x.date) return false;
+                            const recNames = (data.recurringExpenses || []).map(r => r.description);
+                            const d = new Date(x.date); d.setHours(0, 0, 0, 0);
+                            return d.getMonth() === m.getMonth() && d.getFullYear() === m.getFullYear() && recNames.includes(x.description);
+                        }).reduce((s, x) => s + (parseFloat(x.amount) || 0), 0);
+                        if (total > 0) last3.push(total);
+                    }
+                    return last3.length > 0 ? r2(last3.reduce((s, x) => s + x, 0) / last3.length) : fixedExpensesNow;
+                })();
+                const fixedExpenses = fixedLast3;
 
                 const variableExpenses = (() => {
                     const last3 = [];
@@ -2039,7 +2311,7 @@
                 const ds = (data.savingsGoals || []).filter(g => g && g.active !== false).reduce((s, g) => s + (parseFloat(g.dailyAmount) || 0), 0);
                 const ms = r2(ds * 30);
                 const mexp = r2(fixedExpenses + variableExpenses);
-                const mn = r2(monthlyIncomes - mexp - ms);
+                const mn = r2(finalMonthlyIncomes - mexp - ms);
 
                 const proj = []; let rb = tb, rsv = ts, negM = null, risk = false;
                 for (let i = 1; i <= months; i++) {
@@ -2068,10 +2340,12 @@
                     savingsGoalAtRisk: risk,
                     monthlyNet: mn,
                     simulationBase: {
-                        monthlyIncomes: r2(monthlyIncomes),
+                        monthlyIncomes: r2(finalMonthlyIncomes),
+                        monthlyIncomesHistoric: r2(monthlyIncomes),
                         fixedExpenses: r2(fixedExpenses),
                         variableExpenses: r2(variableExpenses),
-                        monthlySavings: r2(ms)
+                        monthlySavings: r2(ms),
+                        isCustomIncome: !!(customIncome && customIncome > 0)
                     }
                 };
             }
@@ -2094,42 +2368,42 @@
 
             // NOVO: CONSELLO INTELIXENTE
             function getSmartAdvice(r) {
-    if (!r) return "💡 Engade contas para comezar";
+                if (!r) return "💡 Engade contas para comezar";
 
-    // Calcular predicción de cierre de período
-    let predictionPhrase = '';
-    if (r.periodInfo && r.periodInfo.dayInPeriod > 1) {
-        const gastosDiarios = AppState.expenses
-            .filter(e => {
-                if(!e||!e.date) return false;
-                const d = new Date(e.date); d.setHours(0,0,0,0);
-                return d >= r.periodInfo.periodStart && d <= r.periodInfo.today;
-            })
-            .reduce((s,e) => s + (parseFloat(e.amount)||0), 0);
-        const ritmo = r2(gastosDiarios / r.periodInfo.dayInPeriod);
-        const gastoProyectado = r2(ritmo * r.periodInfo.remainingDays);
-        const cierrePrevisto = r2(r.totalAvailable - gastoProyectado);
+                // Calcular predicción de cierre de período
+                let predictionPhrase = '';
+                if (r.periodInfo && r.periodInfo.dayInPeriod > 1) {
+                    const gastosDiarios = AppState.expenses
+                        .filter(e => {
+                            if (!e || !e.date) return false;
+                            const d = new Date(e.date); d.setHours(0, 0, 0, 0);
+                            return d >= r.periodInfo.periodStart && d <= r.periodInfo.today;
+                        })
+                        .reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+                    const ritmo = r2(gastosDiarios / r.periodInfo.dayInPeriod);
+                    const gastoProyectado = r2(ritmo * r.periodInfo.remainingDays);
+                    const cierrePrevisto = r2(r.totalAvailable - gastoProyectado);
 
-        if (cierrePrevisto > 20) {
-            predictionPhrase = ` Prevese pechar o período con ${fc(cierrePrevisto)} sobrantes.`;
-        } else if (cierrePrevisto < -5) {
-            predictionPhrase = ` ⚠️ Ao ritmo actual, pecharás o período con ${fc(Math.abs(cierrePrevisto))} en negativo.`;
-        } else {
-            predictionPhrase = ` Vas pechar o período xusto.`;
-        }
-    }
+                    if (cierrePrevisto > 20) {
+                        predictionPhrase = ` Prevese pechar o período con ${fc(cierrePrevisto)} sobrantes.`;
+                    } else if (cierrePrevisto < -5) {
+                        predictionPhrase = ` ⚠️ Ao ritmo actual, pecharás o período con ${fc(Math.abs(cierrePrevisto))} en negativo.`;
+                    } else {
+                        predictionPhrase = ` Vas pechar o período xusto.`;
+                    }
+                }
 
-    if (r.availableToday < 0) {
-        if (r.daysToZero === 0) return "🚨 Saldo crítico. Prioriza gastos fixos e comida." + predictionPhrase;
-        if (r.savingsExceedAvailable) return `💡 O teu aforro diario (${fc(r.breakdown.dailySavingsAmount)}) supera o dispoñible por día (${fc(r.breakdown.availablePerDay)}). Revisa as túas metas.` + predictionPhrase;
-        if (r.daysToZero !== null && r.daysToZero > 0) return `⚠️ Se segues así, en ${r.daysToZero} días entras en negativo.` + predictionPhrase;
-        return "⚠️ Estás en negativo. Revisa os teus gastos." + predictionPhrase;
-    }
-    if (r.availableToday > 50) return "✅ Hoxe tes marxe extra. Podes adiantar aforro!" + predictionPhrase;
-    if (r.availableToday > 20) return `💡 Hoxe podes gastar ata ${fc(r.availableToday)} sen tocar o aforro.` + predictionPhrase;
-    if (r.availableToday > 0) return `💰 Orzamento axustado: ${fc(r.availableToday)} dispoñibles.` + predictionPhrase;
-    return "⚖️ Xusto no límite. Gasta con coidado hoxe." + predictionPhrase;
-}
+                if (r.availableToday < 0) {
+                    if (r.daysToZero === 0) return "🚨 Saldo crítico. Prioriza gastos fixos e comida." + predictionPhrase;
+                    if (r.savingsExceedAvailable) return `💡 O teu aforro diario (${fc(r.breakdown.dailySavingsAmount)}) supera o dispoñible por día (${fc(r.breakdown.availablePerDay)}). Revisa as túas metas.` + predictionPhrase;
+                    if (r.daysToZero !== null && r.daysToZero > 0) return `⚠️ Se segues así, en ${r.daysToZero} días entras en negativo.` + predictionPhrase;
+                    return "⚠️ Estás en negativo. Revisa os teus gastos." + predictionPhrase;
+                }
+                if (r.availableToday > 50) return "✅ Hoxe tes marxe extra. Podes adiantar aforro!" + predictionPhrase;
+                if (r.availableToday > 20) return `💡 Hoxe podes gastar ata ${fc(r.availableToday)} sen tocar o aforro.` + predictionPhrase;
+                if (r.availableToday > 0) return `💰 Orzamento axustado: ${fc(r.availableToday)} dispoñibles.` + predictionPhrase;
+                return "⚖️ Xusto no límite. Gasta con coidado hoxe." + predictionPhrase;
+            }
 
             // NOVO: DETECCIÓN DE ANOMALÍAS
             function detectAnomalies(data) {
@@ -2277,9 +2551,14 @@
                 return;
             }
             const patterns = [];
-            const sixtyDaysAgo = getEffectiveDate();
-            sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
-            const thirtyDaysAgo = getEffectiveDate();
+            const _now2 = getEffectiveDate();
+            const _cm = _now2.getMonth(), _cy = _now2.getFullYear();
+            const _tme = AppState.expenses.filter(e => { const d = new Date(e.date); return d.getMonth() === _cm && d.getFullYear() === _cy; });
+            const _small = _tme.filter(e => parseFloat(e.amount) <= 5 && ['cafe', 'ocio', 'alimentacion'].includes(e.category));
+            if (_small.length >= 5) { patterns.push({ icon: '🐜', title: 'Gastos Formiga', description: `${_small.length} gastos pequenos (≤5€) este mes suman ${fc(_small.reduce((s, e) => s + parseFloat(e.amount), 0))}`, amount: _small.reduce((s, e) => s + parseFloat(e.amount), 0) }); }
+            const _now = getEffectiveDate();
+            const sixtyDaysAgo = new Date(_now); sixtyDaysAgo.setDate(_now.getDate() - 60);
+            const thirtyDaysAgo = new Date(_now); thirtyDaysAgo.setDate(_now.getDate() - 30);
             thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
             const recentExpenses = AppState.expenses.filter(e => new Date(e.date) >= sixtyDaysAgo);
@@ -2510,6 +2789,12 @@
                     alerts.push({ type: 'info', icon: '📅', title: daysUntilPayment === 0 ? 'Pago HOXE' : `Pago en ${daysUntilPayment} días`, text: `${rec.description}: ${fc(rec.amount)}` });
                 }
             });
+            // Recordatorio de backup cada 7 días
+            const lastBackup = localStorage.getItem('cartinos_lastBackup');
+            const daysSinceBackup = lastBackup ? Math.floor((Date.now() - parseInt(lastBackup)) / (1000 * 60 * 60 * 24)) : 999;
+            if (daysSinceBackup >= 7) {
+                alerts.push({ type: 'warning', icon: '💾', title: 'Fai un backup!', text: `Levas ${daysSinceBackup === 999 ? 'moito tempo' : daysSinceBackup + ' días'} sen exportar os teus datos. Vai a Axustes → Exportar JSON.` });
+            }
             return alerts;
         }
 
@@ -2623,7 +2908,16 @@
             const { periodStart } = getPeriodDates(payDay);
             return `${periodStart.getFullYear()}-${String(periodStart.getMonth() + 1).padStart(2, '0')}`;
         }
-
+        function getVariableRecurringEstimate(rec) {
+            if (!rec || !rec.variable) return rec.amount;
+            const matches = AppState.expenses
+                .filter(e => e.description === rec.description)
+                .sort((a, b) => new Date(b.date) - new Date(a.date))
+                .slice(0, 3);
+            if (matches.length === 0) return rec.amount;
+            const avg = matches.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0) / matches.length;
+            return r2(avg);
+        }
         async function markRecurringAsPaid(id) {
             const rec = AppState.recurringExpenses.find(r => r.id === id);
             if (!rec) return;
@@ -2634,6 +2928,14 @@
                 await Database.update('recurringExpenses', rec);
                 const today = getEffectiveDate();
                 const dateStr = today.toISOString().split('T')[0];
+                const estimatedAmount = getVariableRecurringEstimate(rec);
+                if (rec.variable) {
+                    const realAmount = prompt(`Importe real de "${rec.description}" (estimación: ${fc(estimatedAmount)}):`, estimatedAmount);
+                    if (realAmount !== null) {
+                        const parsed = parseFloat(realAmount);
+                        if (!isNaN(parsed) && parsed > 0) rec.amount = r2(parsed);
+                    }
+                }
                 await addCalendarEvent(dateStr, `✓ ${rec.description} pagado`, 'expense', rec.amount);
                 toast('Marcado como pagado ✓');
                 updateAllUI();
@@ -2760,26 +3062,39 @@
             function open() {
                 return new Promise((resolve, reject) => {
                     const req = indexedDB.open(DB_NAME, DB_VERSION);
-                    req.onerror = () => reject(req.error);
-                    req.onsuccess = () => { db = req.result; resolve(db); };
+                    req.onerror = () => {
+                        console.error('Error abrindo BD:', req.error);
+                        reject(req.error);
+                    };
+                    req.onsuccess = () => {
+                        db = req.result;
+                        db.onversionchange = () => { db.close(); toast('⚠️ Base de datos actualizada. Recarga a app.', 'warning'); };
+                        resolve(db);
+                    };
                     req.onupgradeneeded = e => {
                         const d = e.target.result;
                         const oldVersion = e.oldVersion;
-
-                        STORES.forEach(s => {
-                            if (!d.objectStoreNames.contains(s))
-                                d.createObjectStore(s, { keyPath: 'id', autoIncrement: true });
-                        });
-
-                        if (oldVersion < 6) {
-    console.log('Migración v6: estrutura de stores actualizada');
-}
-if (oldVersion < 7) {
-    if (!d.objectStoreNames.contains('periodHistory')) {
-        d.createObjectStore('periodHistory', { keyPath: 'id', autoIncrement: true });
-    }
-    console.log('Migración v7: store periodHistory creado');
-}
+                        const tx = e.target.transaction;
+                        tx.onerror = ev => { console.error('Erro na migración:', ev); };
+                        try {
+                            STORES.forEach(s => {
+                                if (!d.objectStoreNames.contains(s))
+                                    d.createObjectStore(s, { keyPath: 'id', autoIncrement: true });
+                            });
+                            if (oldVersion < 6) {
+                                console.log('Migración v6: estrutura de stores actualizada');
+                            }
+                            if (oldVersion < 7) {
+                                if (!d.objectStoreNames.contains('periodHistory')) {
+                                    d.createObjectStore('periodHistory', { keyPath: 'id', autoIncrement: true });
+                                }
+                                console.log('Migración v7: store periodHistory creado');
+                            }
+                        } catch (err) {
+                            console.error('Erro crítico na migración:', err);
+                            tx.abort();
+                            reject(err);
+                        }
                     };
                 });
             }
@@ -2789,7 +3104,7 @@ if (oldVersion < 7) {
             function remove(store, id) { return new Promise((res, rej) => { const r = db.transaction(store, 'readwrite').objectStore(store).delete(id); r.onsuccess = () => res(); r.onerror = () => rej(r.error); }); }
             function clear(store) { return new Promise((res, rej) => { const r = db.transaction(store, 'readwrite').objectStore(store).clear(); r.onsuccess = () => res(); r.onerror = () => rej(r.error); }); }
             async function clearAll() { for (const s of STORES) await clear(s); }
-            async function getAllData() { const d = {}; for (const s of STORES) d[s] = await getAll(s); return d; }
+            async function getAllData() { const results = await Promise.all(STORES.map(s => getAll(s))); const d = {}; STORES.forEach((s, i) => d[s] = results[i]); return d; }
             function runTransaction(stores, mode, operations) {
                 return new Promise((resolve, reject) => {
                     const tx = db.transaction(stores, mode);
@@ -2833,10 +3148,10 @@ if (oldVersion < 7) {
             detectedPatterns: [],
             frequentExpenses: [],
             searchQuery: '',
-            pushNotificationsEnabled: false
+            pushNotificationsEnabled: false,
+            travelMode: { active: false, name: '', budget: 0, startDate: null, endDate: null, dailyBudget: 0 }
         };
-        let charts = {};
-        // CATEGORÍAS EDITABLES
+        let charts = { weekly: null, cashflow: null, realvsproject: null, periods: null, accounts: null, comparison: null, category: null, simulator: null, dashboard: null };        // CATEGORÍAS EDITABLES
         const DEFAULT_EXPENSE_CATS = [
             { key: 'alimentacion', icon: '🍎', label: 'Alimentación' },
             { key: 'transporte', icon: '🚗', label: 'Transporte' },
@@ -2929,14 +3244,19 @@ if (oldVersion < 7) {
             renderCategoryList('income', 'incomeCatList');
             renderCategoryList('recurring', 'recurringCatList');
         }
+
         function toggleCollapsible(contentId, chevronId) {
-    const content = $(contentId);
-    const chevron = $(chevronId);
-    if (!content) return;
-    const isOpen = content.style.display !== 'none';
-    content.style.display = isOpen ? 'none' : 'block';
-    if (chevron) chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
-}
+            const content = $(contentId);
+            const chevron = $(chevronId);
+            if (!content) return;
+            content.classList.add('collapsible-content');
+            const isOpen = !content.classList.contains('collapsed');
+            content.classList.toggle('collapsed', isOpen);
+            if (isOpen) content.style.display = 'block';
+            else setTimeout(() => { if (content.classList.contains('collapsed')) content.style.display = ''; }, 350);
+            if (chevron) chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+        }
+
         function getEffectiveDate() {
             return new Date();
         }
@@ -2965,104 +3285,118 @@ if (oldVersion < 7) {
             'cafe': ['café', 'cafetería', 'starbucks', 'snack', 'bollería', 'croissant'],
             'subscricions': ['netflix', 'spotify', 'hbo', 'disney', 'prime', 'youtube', 'suscripción', 'mensual']
         };
-function initVoiceExpense() {
-    const btn = $('btnVoiceExpense');
-    if (!btn) return;
+        function initVoiceExpense() {
+            function setupVoiceBtn(btnId, formId) {
+                const btn = $(btnId);
+                if (!btn) return;
 
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-        btn.style.opacity = '0.3';
-        btn.title = 'Recoñecemento de voz non soportado neste navegador';
-        return;
-    }
-
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    let recognition = null;
-    let isListening = false;
-
-    btn.addEventListener('click', () => {
-        if (isListening) {
-            recognition?.stop();
-            return;
-        }
-
-        recognition = new SpeechRecognition();
-        recognition.lang = 'es-ES';
-        recognition.continuous = false;
-        recognition.interimResults = false;
-        recognition.maxAlternatives = 1;
-
-        recognition.onstart = () => {
-            isListening = true;
-            btn.classList.add('listening');
-            btn.textContent = '🔴';
-            toast('Escoitando...', 'info');
-        };
-
-        recognition.onresult = (event) => {
-            const transcript = event.results[0][0].transcript;
-            const parsed = parseSmartText(transcript);
-            if (!parsed) { toast('Non se entendeu. Inténtao de novo.', 'error'); return; }
-
-            const f = $('expenseForm');
-            if (parsed.description) f.description.value = parsed.description;
-            if (parsed.amount && parsed.amount > 0) f.amount.value = parsed.amount.toFixed(2);
-            if (parsed.category) {
-                const catSelect = f.querySelector('select[name="category"]');
-                if (catSelect) {
-                    const option = catSelect.querySelector(`option[value="${parsed.category}"]`);
-                    if (option) catSelect.value = parsed.category;
+                if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                    btn.style.opacity = '0.3';
+                    btn.title = 'Recoñecemento de voz non soportado neste navegador';
+                    return;
                 }
+
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                let recognition = null;
+                let isListening = false;
+
+                btn.addEventListener('click', () => {
+                    if (isListening) {
+                        recognition?.stop();
+                        return;
+                    }
+
+                    recognition = new SpeechRecognition();
+                    recognition.lang = 'es-ES';
+                    recognition.continuous = false;
+                    recognition.interimResults = true;
+                    recognition.maxAlternatives = 1;
+
+                    recognition.onstart = () => {
+                        isListening = true;
+                        btn.classList.add('listening');
+                        btn.textContent = '🔴';
+                        toast('Escoitando...', 'info');
+                    };
+
+                    recognition.onresult = (event) => {
+                        const result = event.results[event.results.length - 1];
+                        const transcript = result[0].transcript;
+                        if (!result.isFinal) { btn.title = `🎤 ${transcript}`; toast(`Escoitando: "${transcript}"`, 'info'); return; }
+                        const parsed = parseSmartText(transcript);
+                        if (!parsed) { toast('Non se entendeu. Inténtao de novo.', 'error'); return; }
+
+                        const f = $(formId);
+                        if (parsed.description) f.description.value = parsed.description;
+                        if (parsed.amount && parsed.amount > 0) f.amount.value = parsed.amount.toFixed(2);
+                        if (parsed.category) {
+                            const catSelect = f.querySelector('select[name="category"]');
+                            if (catSelect) {
+                                const option = catSelect.querySelector(`option[value="${parsed.category}"]`);
+                                if (option) catSelect.value = parsed.category;
+                            }
+                        }
+                        toast(`Recoñecido: "${transcript}" ✓`);
+                    };
+
+                    recognition.onerror = (event) => {
+                        const errors = {
+                            'no-speech': 'Non se detectou voz. Inténtao de novo.',
+                            'not-allowed': 'Permiso de micrófono denegado.',
+                            'network': 'Erro de rede no recoñecemento.',
+                        };
+                        toast(errors[event.error] || 'Erro no recoñecemento de voz.', 'error');
+                    };
+
+                    recognition.onend = () => {
+                        isListening = false;
+                        btn.classList.remove('listening');
+                        btn.textContent = '🎤';
+                    };
+
+                    recognition.start();
+                });
             }
-            toast(`Recoñecido: "${transcript}" ✓`);
-        };
-
-        recognition.onerror = (event) => {
-            const errors = {
-                'no-speech': 'Non se detectou voz. Inténtao de novo.',
-                'not-allowed': 'Permiso de micrófono denegado.',
-                'network': 'Erro de rede no recoñecemento.',
-            };
-            toast(errors[event.error] || 'Erro no recoñecemento de voz.', 'error');
-        };
-
-        recognition.onend = () => {
-            isListening = false;
-            btn.classList.remove('listening');
-            btn.textContent = '🎤';
-        };
-
-        recognition.start();
-    });
-}
+            setupVoiceBtn('btnVoiceExpense', 'expenseForm');
+            setupVoiceBtn('btnVoiceIncome', 'incomeForm');
+        }
         // Función para parsear texto inteligente (de B/C adaptada)
         function parseSmartText(text) {
             if (!text) return null;
             text = text.toLowerCase().trim();
+
+            // Detectar importe — busca patrones como "12 euros", "doce euros", "12,50"
+            const numberWords = { 'un': 1, 'unha': 1, 'dos': 2, 'dous': 2, 'tres': 3, 'catro': 4, 'cinco': 5, 'seis': 6, 'sete': 7, 'oito': 8, 'nove': 9, 'dez': 10, 'once': 11, 'doce': 12, 'trece': 13, 'catorce': 14, 'quince': 15, 'vinte': 20, 'trinta': 30, 'corenta': 40, 'cincuenta': 50, 'sesenta': 60, 'setenta': 70, 'oitenta': 80, 'noventa': 90, 'cen': 100, 'cento': 100, 'doscientos': 200, 'trescientos': 300 };
             const amountRegex = /(\d+(?:[.,]\d+)?)/g;
             const amounts = text.match(amountRegex);
             let amount = null;
             if (amounts && amounts.length > 0) {
-                amount = parseFloat(amounts[amounts.length - 1].replace(',', '.'));
-            }
-            let detectedCategory = 'outros';
-            for (const [category, keywords] of Object.entries(keywordsByCategory)) {
-                for (const keyword of keywords) {
-                    if (text.includes(keyword)) {
-                        detectedCategory = category;
-                        break;
-                    }
+                amount = parseFloat(amounts[0].replace(',', '.'));
+            } else {
+                for (const [word, val] of Object.entries(numberWords)) {
+                    if (text.includes(word)) { amount = val; break; }
                 }
-                if (detectedCategory !== 'outros') break;
             }
+
+            // Detectar categoría usando keywordsByCategory + historial
+            let detectedCategory = suggestCategory(text);
+
+            // Limpiar descripción — eliminar palabras de contexto y el importe
+            const stopWords = ['gastei', 'gasto', 'paguei', 'pagué', 'comprei', 'compré', 'euros', 'euro', '€', 'en', 'no', 'na', 'de', 'un', 'unha', 'por', 'para', 'a', 'e', 'que', 'hoxe', 'onte', 'hoy', 'ayer'];
             let description = text;
-            if (amount && amounts) {
-                const lastAmount = amounts[amounts.length - 1];
-                const index = description.lastIndexOf(lastAmount);
-                if (index !== -1) {
-                    description = description.substring(0, index) + description.substring(index + lastAmount.length);
-                }
+            if (amounts) amounts.forEach(a => { description = description.replace(a, ''); });
+            stopWords.forEach(w => { description = description.replace(new RegExp(`\\b${w}\\b`, 'g'), ''); });
+            description = description.replace(/\s+/g, ' ').trim();
+
+            // Si la descripción quedó vacía, usar la keyword de categoría detectada
+            if (!description || description.length < 2) {
+                const catKeywords = keywordsByCategory[detectedCategory];
+                description = catKeywords ? catKeywords[0] : 'Sen descrición';
             }
-            description = description.trim() || 'Sen descrición';
+
+            // Capitalizar primera letra
+            description = description.charAt(0).toUpperCase() + description.slice(1);
+
             return { description, amount, category: detectedCategory };
         }
 
@@ -3113,11 +3447,11 @@ function initVoiceExpense() {
                 $('accountModal').querySelector('.modal-title').textContent = 'Nova Conta';
             }
             if (id === 'expenseModal') {
-    const f = $('expenseForm');
-    f.editId.value = '';
-    $('expenseModal').querySelector('.modal-title').textContent = 'Novo Gasto';
-    setTimeout(() => initVoiceExpense(), 100);
-}
+                const f = $('expenseForm');
+                f.editId.value = '';
+                $('expenseModal').querySelector('.modal-title').textContent = 'Novo Gasto';
+                setTimeout(() => initVoiceExpense(), 100);
+            }
             updateAccountSelects();
             document.querySelectorAll(`#${id} input[type="date"]`).forEach(i => { if (!i.value) i.value = new Date().toISOString().split('T')[0]; });
         }
@@ -3134,59 +3468,59 @@ function initVoiceExpense() {
         }
 
         function switchSection(name) {
-    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-    $(`section-${name}`).classList.add('active');
-    document.querySelector(`[data-section="${name}"]`).classList.add('active');
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            $(`section-${name}`).classList.add('active');
+            document.querySelector(`[data-section="${name}"]`).classList.add('active');
 
-    switch (name) {
-        case 'dashboard':
-            updateDashboardChart();
-            updateRecentMovements();
-            break;
-        case 'accounts':
-            updateAccountsList();
-            updateIncomesList();
-            updateExpensesList();
-            break;
-        case 'recurring':
-            updateRecurringList();
-            updateSavingsList();
-            updateDebtsList();
-            break;
-        case 'analysis':
-            updateAnalysis();
-            updateSimulator();
-            break;
-        case 'calendar':
-            updateCalendar();
-            break;
-        case 'settings':
-            updateCategorySettingsUI();
-            updateCategorySelects();
-            updateSystemStatus();
-            updatePeriodHistory();
-            break;
-    }
+            switch (name) {
+                case 'dashboard':
+                    updateDashboardChart();
+                    updateRecentMovements();
+                    break;
+                case 'accounts':
+                    updateAccountsList();
+                    updateIncomesList();
+                    updateExpensesList();
+                    break;
+                case 'recurring':
+                    updateRecurringList();
+                    updateSavingsList();
+                    updateDebtsList();
+                    break;
+                case 'analysis':
+                    updateAnalysis();
+                    updateSimulator();
+                    break;
+                case 'calendar':
+                    updateCalendar();
+                    break;
+                case 'settings':
+                    updateCategorySettingsUI();
+                    updateCategorySelects();
+                    updateSystemStatus();
+                    updatePeriodHistory();
+                    break;
+            }
 
-    const fabContainer = document.querySelector('.fab-container');
-    if (fabContainer) {
-        const showFabs = ['dashboard', 'accounts', 'recurring'].includes(name);
-        fabContainer.style.display = showFabs ? 'flex' : 'none';
-    }
+            const fabContainer = document.querySelector('.fab-container');
+            if (fabContainer) {
+                const showFabs = ['dashboard', 'accounts', 'recurring'].includes(name);
+                fabContainer.style.display = showFabs ? 'flex' : 'none';
+            }
 
-    const mainDisplay = document.querySelector('.main-display');
-    const compactDisplay = $('compactDisplay');
-    if (mainDisplay && compactDisplay) {
-        if (name === 'dashboard') {
-            mainDisplay.style.display = '';
-            compactDisplay.style.display = 'none';
-        } else {
-            mainDisplay.style.display = 'none';
-            compactDisplay.style.display = 'block';
+            const mainDisplay = document.querySelector('.main-display');
+            const compactDisplay = $('compactDisplay');
+            if (mainDisplay && compactDisplay) {
+                if (name === 'dashboard') {
+                    mainDisplay.style.display = '';
+                    compactDisplay.style.display = 'none';
+                } else {
+                    mainDisplay.style.display = 'none';
+                    compactDisplay.style.display = 'block';
+                }
+            }
         }
-    }
-}
 
 
         function updateAccountSelects() {
@@ -3471,10 +3805,10 @@ function initVoiceExpense() {
                     : `<button class="btn btn-success btn-icon" data-mark-paid="${r.id}" title="Marcar pagado">✓</button>`;
                 return `<div class="list-item" style="border-left-color:${paid ? 'var(--accent-green)' : 'var(--accent-yellow)'}">
             <div class="list-item-info">
-                <div class="list-item-name">${escapeHtml(r.description)}</div>
-                <div class="list-item-details">${dayLabel} · ${accName} · ${cats[r.category] || '📦'} · ${paid ? '✓ Pagado' : '○ Pendente'}</div>
+                <div class="list-item-name">${escapeHtml(r.description)}${r.variable ? ' <span style="font-size:0.7rem;color:var(--accent-cyan);background:rgba(0,245,255,0.1);padding:1px 6px;border-radius:10px;">~variable</span>' : ''}</div>
+                <div class="list-item-details">${dayLabel} · ${accName} · ${cats[r.category] || '📦'} · ${paid ? '✓ Pagado' : '○ Pendente'}${r.variable ? ` · est. ${fc(getVariableRecurringEstimate(r))}` : ''}</div>
             </div>
-            <div class="list-item-amount expense">-${fc(r.amount)}</div>
+            <div class="list-item-amount expense">-${fc(r.variable ? getVariableRecurringEstimate(r) : r.amount)}</div>
             <div class="list-item-actions">
                 <button class="btn btn-secondary btn-icon" data-edit-recurring="${r.id}" title="Editar">✎</button>
                 ${togglePaidBtn}
@@ -3580,6 +3914,32 @@ function initVoiceExpense() {
             applyAddSavingsAmount(id, parsed);
         }
 
+        function openSubtractSavingsAmount(id) {
+            const g = AppState.savingsGoals.find(x => x.id === id); if (!g) return;
+            if ((g.currentAmount || 0) <= 0) { toast('Non hai aforro que retirar', 'error'); return; }
+            const amt = prompt(`Retirar de "${g.name}" (aforrado: ${fc(g.currentAmount)}):`);
+            if (amt === null) return;
+            const parsed = parseFloat(amt) || 0;
+            if (parsed <= 0) { toast('Cantidade non válida', 'error'); return; }
+            if (parsed > g.currentAmount) { toast(`Non podes retirar máis do aforrado (${fc(g.currentAmount)})`, 'error'); return; }
+            applySubtractSavingsAmount(id, parsed);
+        }
+
+        async function applySubtractSavingsAmount(id, amount) {
+            const g = AppState.savingsGoals.find(x => x.id === id); if (!g) return;
+            g.currentAmount = r2((g.currentAmount || 0) - amount);
+            const today = getEffectiveDate(); today.setHours(0, 0, 0, 0);
+            if (g.targetDate) {
+                const daysRemaining = Math.ceil((new Date(g.targetDate) - today) / (1000 * 60 * 60 * 24));
+                if (daysRemaining > 0) {
+                    g.dailyAmount = r2((g.targetAmount - g.currentAmount) / daysRemaining);
+                }
+            }
+            await Database.update('savingsGoals', g);
+            toast(`Retirado ${fc(amount)} da meta ✓`);
+            updateAllUI();
+        }
+
         async function applyAddSavingsAmount(id, amount) {
             const g = AppState.savingsGoals.find(x => x.id === id); if (!g) return;
             g.currentAmount = r2((g.currentAmount || 0) + amount);
@@ -3600,6 +3960,80 @@ function initVoiceExpense() {
             await Database.update('savingsGoals', g);
             updateAllUI();
         }
+        function updateSavingsList() {
+            const c = $('savingsList'), ac = $('savingsAlerts');
+            if (!c) return;
+            const recalc = FinancialEngine.recalculateSavingsGoals(AppState.savingsGoals);
+            const today = getEffectiveDate(); today.setHours(0, 0, 0, 0);
+
+            const expired = (AppState.savingsGoals || []).filter(g => {
+                if (!g || g.active === false || !g.targetDate) return false;
+                const target = new Date(g.targetDate); target.setHours(23, 59, 59, 999);
+                return target < today;
+            });
+
+            let alertsHtml = '';
+            alertsHtml += expired.map(g => `
+        <div class="simulator-alert danger">
+            <span class="simulator-alert-icon">📅</span>
+            <div class="simulator-alert-text">
+                <strong>${escapeHtml(g.name)}</strong>: Data límite vencida (${fd(g.targetDate)}).
+                <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+                    <button class="btn btn-success" style="padding:5px 10px;min-height:30px;font-size:0.75rem;" onclick="markSavingsCompleted(${g.id})">✅ Completada</button>
+                    <button class="btn btn-secondary" style="padding:5px 10px;min-height:30px;font-size:0.75rem;" onclick="openRescheduleSavings(${g.id})">📅 Reagendar</button>
+                </div>
+            </div>
+        </div>`).join('');
+
+            alertsHtml += recalc.map(r => `
+        <div class="simulator-alert warning">
+            <span class="simulator-alert-icon">⚠️</span>
+            <div class="simulator-alert-text">
+                <strong>${escapeHtml(r.name)}</strong>: Necesitas ${fc(r.requiredDaily)}/día
+                <button class="btn btn-secondary" style="margin-left:8px;padding:5px 8px;min-height:30px;font-size:0.7rem;" data-recalc="${r.id}" data-daily="${r.requiredDaily}">Axustar</button>
+            </div>
+        </div>`).join('');
+
+            if (ac) ac.innerHTML = alertsHtml;
+
+            if (!AppState.savingsGoals.length) {
+                c.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🎯</div><p>Define metas</p></div>';
+                return;
+            }
+
+            c.innerHTML = AppState.savingsGoals.map(g => {
+                const p = g.targetAmount > 0 ? (g.currentAmount / g.targetAmount) * 100 : 0;
+                const dr = g.dailyAmount > 0 ? Math.ceil((g.targetAmount - g.currentAmount) / g.dailyAmount) : '∞';
+                const pc = p < 30 ? 'danger' : p < 70 ? 'warning' : 'success';
+                const isCompleted = g.completed === true;
+                const isExpired = g.targetDate && new Date(g.targetDate) < today && !isCompleted;
+                const borderColor = isCompleted ? 'var(--accent-green)' : isExpired ? '#ff4757' : 'var(--accent-purple)';
+                const completedBadge = isCompleted ? '<span style="font-size:0.7rem;background:rgba(57,255,20,0.2);color:var(--accent-green);padding:2px 6px;border-radius:4px;margin-left:6px;">✅ Completada</span>' : '';
+                return `<div class="list-item" style="flex-direction:column;align-items:stretch;border-left-color:${borderColor}">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <div class="list-item-info">
+                    <div class="list-item-name">${escapeHtml(g.name)}${completedBadge}</div>
+                    <div class="list-item-details">${isCompleted ? 'Meta completada' : `${fc(g.dailyAmount)}/día · ~${dr} días`}</div>
+                </div>
+                <div style="text-align:right;margin-right:8px;">
+                    <div class="list-item-amount income">${fc(g.currentAmount)}</div>
+                    <div class="list-item-details">de ${fc(g.targetAmount)}</div>
+                </div>
+                <div style="display:flex;gap:4px;">
+                    ${!isCompleted ? `
+    <button class="btn btn-secondary btn-icon" onclick="openAddSavingsAmount(${g.id})" title="Engadir aportación">+</button>
+    <button class="btn btn-secondary btn-icon" onclick="openSubtractSavingsAmount(${g.id})" title="Retirar aportación">−</button>
+` : ''}
+                    <button class="btn btn-danger btn-icon" data-delete="savings" data-id="${g.id}">✕</button>
+                </div>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill ${pc}" style="width:${Math.min(p, 100)}%"></div>
+            </div>
+        </div>`;
+            }).join('');
+        }
+
         function updateDebtsList() {
             const c = $('debtsList');
             if (!AppState.debts.length) {
@@ -3620,19 +4054,19 @@ function initVoiceExpense() {
                 const progressCls = type === 'owe' ? '' : 'success';
 
                 return `
-        <div class="list-item" style="border-left-color:${color};cursor:pointer;" onclick="openDebtHistory('${d.id}')">
+        <div class="list-item" style="border-left-color:${color};cursor:pointer;" onclick="openDebtHistory(${d.id})">
             <div class="list-item-info">
-                <div class="list-item-name">${d.person}</div>
-                <div class="list-item-details">${d.concept} · ${(d.movements || []).length} movementos</div>
+                <div class="list-item-name">${escapeHtml(d.person)}</div>
+                <div class="list-item-details">${escapeHtml(d.concept)} · ${(d.movements || []).length} movementos</div>
                 <div class="progress-bar" style="margin-top:6px;height:4px;">
-                    <div class="progress-fill ${progressCls}" style="width:${p}%"></div>
+                    <div class="progress-fill ${progressCls}" style="width:${Math.min(p, 100)}%"></div>
                 </div>
             </div>
             <div style="text-align:right;margin-right:8px;">
                 <div class="list-item-amount ${cls}">${fc(rem)}</div>
             </div>
             <div class="list-item-actions" onclick="event.stopPropagation()">
-                <button class="btn btn-danger btn-icon" onclick="event.stopPropagation();if(confirm('Eliminar esta débeda?'))deleteItem('debt','${d.id}')">✕</button>
+                <button class="btn btn-danger btn-icon" onclick="event.stopPropagation();if(confirm('Eliminar esta débeda?'))deleteItem('debt',${d.id})">✕</button>
             </div>
         </div>`;
             };
@@ -3649,13 +4083,20 @@ function initVoiceExpense() {
 
             c.innerHTML = h;
         }
+
         function updateRecentMovements() {
             const c = $('recentMovements');
             const all = [...AppState.incomes.map(i => ({ ...i, type: 'income' })), ...AppState.expenses.map(e => ({ ...e, type: 'expense' })), ...(AppState.transfers || []).map(t => ({ ...t, type: 'transfer', description: `${t.description || 'Transferencia'}` }))].sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt)).slice(0, 6);
             if (!all.length) { c.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📊</div><p>Sen movementos</p></div>'; return; }
             c.innerHTML = all.map(m => `<div class="list-item" style="border-left-color:${m.type === 'income' ? 'var(--accent-green)' : m.type === 'transfer' ? 'var(--accent-cyan)' : 'var(--accent-pink)'}"><div class="list-item-info"><div class="list-item-name">${escapeHtml(m.description)}</div><div class="list-item-details">${fd(m.date || m.createdAt)}</div></div><div class="list-item-amount ${m.type === 'income' ? 'income' : m.type === 'transfer' ? 'neutral' : 'expense'}">${m.type === 'income' ? '+' : m.type === 'transfer' ? '⇄' : '-'}${fc(m.amount)}</div></div>`).join('');
         }
+
+        let _updateAllUITimer = null;
         function updateAllUI() {
+            if (_updateAllUITimer) clearTimeout(_updateAllUITimer);
+            _updateAllUITimer = setTimeout(_doUpdateAllUI, 100);
+        }
+        function _doUpdateAllUI() {
             updateMainDisplay();
             updateRecentMovements();
             updateNotificationUI();
@@ -3664,30 +4105,31 @@ function initVoiceExpense() {
 
             const section = getActiveSection();
             switch (section) {
-    case 'dashboard':
-        updateDashboardChart();
-        break;
-    case 'accounts':
-        updateAccountsList();
-        updateIncomesList();
-        updateExpensesList();
-        break;
-    case 'recurring':
-        updateRecurringList();
-        updateSavingsList();
-        updateDebtsList();
-        break;
-    case 'analysis':
-        updateAnalysis();
-        updateSimulator();
-        break;
-    case 'settings':
-        updateCategorySettingsUI();
-        updateCategorySelects();
-        updateSystemStatus();
-        updatePeriodHistory();
-        break;
-}
+                case 'dashboard':
+                    updateDashboardChart();
+                    updateTrafficLight();
+                    break;
+                case 'accounts':
+                    updateAccountsList();
+                    updateIncomesList();
+                    updateExpensesList();
+                    break;
+                case 'recurring':
+                    updateRecurringList();
+                    updateSavingsList();
+                    updateDebtsList();
+                    break;
+                case 'analysis':
+                    updateAnalysis();
+                    updateSimulator();
+                    break;
+                case 'settings':
+                    updateCategorySettingsUI();
+                    updateCategorySelects();
+                    updateSystemStatus();
+                    updatePeriodHistory();
+                    break;
+            }
         }
 
         function getActiveSection() {
@@ -3743,9 +4185,20 @@ function initVoiceExpense() {
         function updateSimulator() {
             const activeBtn = document.querySelector('.horizon-btn.active');
             const months = parseInt(activeBtn?.dataset.months) || 3;
-            const sim = FinancialEngine.simulateFinances(AppState, months);
+            const customIncome = parseFloat($('simulatorCustomIncome')?.value) || 0;
+            const sim = FinancialEngine.simulateFinances(AppState, months, customIncome);
             $('simBalance').textContent = fc(sim.finalBalance);
             $('simSavings').textContent = fc(sim.finalSavings);
+            if ($('simulatorBase') && sim.simulationBase) {
+                const sb = sim.simulationBase;
+                $('simulatorBase').innerHTML = `
+                    📊 Base de cálculo:
+                    <b style="color:var(--accent-green);">Ingresos ${sb.isCustomIncome ? '(personalizados)' : '(media 3m)'}: ${fc(sb.monthlyIncomes)}</b> ·
+                    <b style="color:var(--accent-pink);">Fixos (media 3m): ${fc(sb.fixedExpenses)}</b> ·
+                    <b style="color:var(--accent-orange);">Variables (media 3m): ${fc(sb.variableExpenses)}</b> ·
+                    <b style="color:var(--accent-purple);">Aforro/mes: ${fc(sb.monthlySavings)}</b>
+                `;
+            }
             let alerts = '';
             if (sim.negativeMonth) alerts += `<div class="simulator-alert danger"><span class="simulator-alert-icon">🚨</span><div class="simulator-alert-text">Saldo negativo no mes ${sim.negativeMonth}</div></div>`;
             if (sim.savingsGoalAtRisk) alerts += `<div class="simulator-alert warning"><span class="simulator-alert-icon">⚠️</span><div class="simulator-alert-text">Meta de aforro en risco</div></div>`;
@@ -3782,8 +4235,359 @@ function initVoiceExpense() {
                     return `<div class="pattern-card" ${typeClass}><div class="pattern-header"><span class="pattern-icon">${p.icon}</span><span class="pattern-title">${p.title}</span></div><div class="pattern-description">${p.description}${p.amount ? ` <span class="pattern-amount">${fc(p.amount)}</span>` : ''}</div></div>`;
                 }).join('');
             }
+            updateWeeklyChart();
+            updateCashflowChart();
+            updateRealVsProjectChart();
             updateComparisonChart();
+            updateAccountsChart();
             updateCategoryChart();
+            updatePeriodsChart();
+            updateTrafficLight();
+        }
+
+        function updateTrafficLight() {
+            const now = getEffectiveDate(); now.setHours(0, 0, 0, 0);
+            const cm = now.getMonth(), cy = now.getFullYear();
+            // Calcular media por categoría de los últimos 6 meses
+            const historyByCat = {};
+            for (let i = 1; i <= 6; i++) {
+                const m = new Date(cy, cm - i, 1);
+                const mEnd = new Date(cy, cm - i + 1, 0);
+                AppState.expenses.forEach(e => {
+                    if (!e || !e.date) return;
+                    const d = new Date(e.date); d.setHours(0, 0, 0, 0);
+                    if (d >= m && d <= mEnd) {
+                        if (!historyByCat[e.category]) historyByCat[e.category] = [];
+                        historyByCat[e.category].push(parseFloat(e.amount) || 0);
+                    }
+                });
+            }
+            // Calcular gasto actual del mes
+            const currentByCat = {};
+            AppState.expenses.forEach(e => {
+                if (!e || !e.date) return;
+                const d = new Date(e.date);
+                if (d.getMonth() === cm && d.getFullYear() === cy) {
+                    currentByCat[e.category] = (currentByCat[e.category] || 0) + (parseFloat(e.amount) || 0);
+                }
+            });
+            const catNames = { alimentacion: '🍎 Alimentación', transporte: '🚗 Transporte', ocio: '🎮 Ocio', saude: '💊 Saúde', roupa: '👕 Roupa', cafe: '☕ Café', subscricions: '📱 Subscricións', vivienda: '🏠 Vivenda', servicios: '💡 Servizos', outros: '📦 Outros' };
+            const results = [];
+            Object.entries(currentByCat).forEach(([cat, current]) => {
+                const history = historyByCat[cat] || [];
+                if (history.length === 0) {
+                    // Sen historial — mostrar en amarelo como referencia
+                    results.push({ cat, current, avg: 0, ratio: 1, color: '#ffd93d', emoji: '🟡', status: 'Sen historial previo', name: catNames[cat] || cat, months: 0 });
+                    return;
+                }
+                const avg = history.reduce((s, v) => s + v, 0) / history.length;
+                if (avg === 0) return;
+                const ratio = current / avg;
+                let color, emoji, status;
+                if (ratio > 1.1) { color = '#ff4757'; emoji = '🔴'; status = `+${((ratio - 1) * 100).toFixed(0)}% sobre media`; }
+                else if (ratio > 0.9) { color = '#ffd93d'; emoji = '🟡'; status = `Na media (${((ratio) * 100).toFixed(0)}%)`; }
+                else { color = '#39ff14'; emoji = '🟢'; status = `-${((1 - ratio) * 100).toFixed(0)}% baixo media`; }
+                results.push({ cat, current, avg: r2(avg), ratio, color, emoji, status, name: catNames[cat] || cat, months: history.length });
+            });
+            results.sort((a, b) => b.ratio - a.ratio);
+            // Versión completa para Análise
+            const fullEl = $('trafficLightFull');
+            if (fullEl) {
+                if (!results.length) { fullEl.innerHTML = '<div style="color:var(--text-muted);font-size:0.8rem;text-align:center;padding:10px;">Sen datos suficientes</div>'; }
+                else {
+                    fullEl.innerHTML = `
+                        <div style="font-family:'Orbitron',monospace;font-size:0.7rem;color:var(--accent-cyan);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.1em;">Semáforo vs media ${results[0]?.months || 0}m</div>
+                        ${results.map(r => `
+                        <div style="margin-bottom:10px;">
+                            <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:0.82rem;">
+                                <span>${r.emoji} ${r.name}</span>
+                                <span style="color:${r.color};font-family:'Orbitron',monospace;">${fc(r.current)} <span style="color:var(--text-muted);font-size:0.7rem;">/ ${fc(r.avg)} media</span></span>
+                            </div>
+                            <div style="background:rgba(255,255,255,0.08);border-radius:20px;height:8px;overflow:hidden;">
+                                <div style="height:100%;width:${Math.min(r.ratio * 100, 150)}%;background:${r.color};border-radius:20px;transition:width 0.5s ease;max-width:100%;"></div>
+                            </div>
+                            <div style="font-size:0.7rem;color:var(--text-muted);margin-top:2px;">${r.status}</div>
+                        </div>`).join('')}`;
+                }
+            }
+            // Versión compacta para dashboard (solo rojo y naranja)
+            const alerts = results.filter(r => r.ratio > 0.9);
+            const compactEl = $('trafficLightCompact');
+            const cardEl = $('trafficLightCard');
+            if (compactEl && cardEl) {
+                if (!alerts.length) { cardEl.style.display = 'none'; }
+                else {
+                    cardEl.style.display = 'block';
+                    compactEl.innerHTML = alerts.map(r => `
+                        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,110,199,0.1);">
+                            <span style="font-size:1.2rem;">${r.emoji}</span>
+                            <div style="flex:1;">
+                                <div style="font-size:0.85rem;color:var(--text-primary);">${r.name}</div>
+                                <div style="background:rgba(255,255,255,0.08);border-radius:20px;height:6px;margin-top:4px;overflow:hidden;">
+                                    <div style="height:100%;width:${Math.min(r.ratio * 100, 150)}%;background:${r.color};border-radius:20px;max-width:100%;"></div>
+                                </div>
+                            </div>
+                            <div style="text-align:right;">
+                                <div style="font-family:'Orbitron',monospace;font-size:0.8rem;color:${r.color};">${fc(r.current)}</div>
+                                <div style="font-size:0.7rem;color:var(--text-muted);">${r.status}</div>
+                            </div>
+                        </div>`).join('');
+                }
+            }
+        }
+
+        function updateAccountsChart() {
+            const ctx = $('accountsChart'); if (!ctx) return;
+            const activeAccounts = AppState.accounts.filter(a => !a.archived);
+            if (!activeAccounts.length) return;
+            const now = getEffectiveDate(); now.setHours(0, 0, 0, 0);
+            const labels = [];
+            for (let i = 5; i >= 0; i--) {
+                const m = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                labels.push(m.toLocaleDateString('gl-ES', { month: 'short', year: '2-digit' }));
+            }
+            const colors = ['#00f5ff', '#ff6ec7', '#39ff14', '#ffd93d', '#a855f7', '#ff9f43'];
+            const datasets = activeAccounts.map((acc, idx) => {
+                const data = [];
+                for (let i = 5; i >= 0; i--) {
+                    const m = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                    const mEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
+                    const inflows = AppState.incomes
+                        .filter(x => x.accountId === acc.id && new Date(x.date) >= m && new Date(x.date) <= mEnd)
+                        .reduce((s, x) => s + (parseFloat(x.amount) || 0), 0);
+                    const outflows = AppState.expenses
+                        .filter(x => x.accountId === acc.id && new Date(x.date) >= m && new Date(x.date) <= mEnd)
+                        .reduce((s, x) => s + (parseFloat(x.amount) || 0), 0);
+                    data.push(r2(i === 0 ? acc.balance : acc.balance - inflows + outflows));
+                }
+                return {
+                    label: acc.name,
+                    data,
+                    borderColor: colors[idx % colors.length],
+                    backgroundColor: 'transparent',
+                    tension: 0.3,
+                    pointRadius: 3,
+                    pointBackgroundColor: colors[idx % colors.length]
+                };
+            });
+            if ($('accountsChartInfo')) $('accountsChartInfo').textContent = `${activeAccounts.length} conta(s) activa(s) · Últimos 6 meses`;
+            if (charts.accounts) charts.accounts.destroy();
+            charts.accounts = new Chart(ctx, {
+                type: 'line',
+                data: { labels, datasets },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#a0a0c0', font: { size: 10 } } } },
+                    scales: {
+                        x: { ticks: { color: '#606080', font: { size: 9 } }, grid: { color: 'rgba(255,110,199,0.1)' } },
+                        y: { ticks: { color: '#606080', font: { size: 9 } }, grid: { color: 'rgba(255,110,199,0.1)' } }
+                    }
+                }
+            });
+        }
+
+        function updateRealVsProjectChart() {
+            const ctx = $('realvsprojectChart'); if (!ctx) return;
+            const r = FinancialEngine.calculateAvailableToday(AppState);
+            const pInfo = r?.periodInfo; if (!pInfo) return;
+            const { periodStart, periodEnd, totalDays } = pInfo;
+            const startBalance = AppState.accounts
+                .filter(a => a.forDailySpending && !a.archived)
+                .reduce((s, a) => s + (parseFloat(a.balance) || 0), 0);
+            const periodExpenses = AppState.expenses.filter(e => {
+                if (!e || !e.date) return false;
+                const d = new Date(e.date); d.setHours(0, 0, 0, 0);
+                return d >= periodStart && d <= periodEnd;
+            }).sort((a, b) => new Date(a.date) - new Date(b.date));
+            const totalSpent = periodExpenses.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+            const daysPassed = pInfo.dayInPeriod || 1;
+            const dailyRealRate = totalSpent / daysPassed;
+            const labels = [], realData = [], projData = [];
+            for (let i = 0; i < totalDays; i++) {
+                const day = new Date(periodStart);
+                day.setDate(periodStart.getDate() + i);
+                labels.push(day.toLocaleDateString('gl-ES', { day: '2-digit', month: 'short' }));
+                const dayExpenses = periodExpenses
+                    .filter(e => { const d = new Date(e.date); return d.toDateString() === day.toDateString(); })
+                    .reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+                const isFuture = i >= daysPassed;
+                if (!isFuture) {
+                    const cumSpent = periodExpenses
+                        .filter(e => new Date(e.date) <= day)
+                        .reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+                    realData.push(r2(startBalance - cumSpent));
+                } else {
+                    realData.push(null);
+                }
+                projData.push(r2(startBalance - (dailyRealRate * (i + 1))));
+            }
+            const diff = realData[daysPassed - 1] !== null ? r2(realData[daysPassed - 1] - projData[daysPassed - 1]) : 0;
+            if ($('realvsprojectInfo')) $('realvsprojectInfo').textContent = `Período actual · Vas ${diff >= 0 ? '✅ ' + fc(diff) + ' mellor' : '⚠️ ' + fc(Math.abs(diff)) + ' peor'} do proxectado`;
+            if (charts.realvsproject) charts.realvsproject.destroy();
+            charts.realvsproject = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [
+                        { label: 'Real', data: realData, borderColor: '#00f5ff', backgroundColor: 'rgba(0,245,255,0.1)', fill: true, tension: 0.3, pointRadius: 2 },
+                        { label: 'Proxectado', data: projData, borderColor: '#ffd93d', backgroundColor: 'transparent', borderDash: [5, 5], tension: 0.3, pointRadius: 0 }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#a0a0c0', font: { size: 10 } } } },
+                    scales: {
+                        x: { ticks: { color: '#606080', font: { size: 8 }, maxRotation: 45 }, grid: { color: 'rgba(255,110,199,0.1)' } },
+                        y: { ticks: { color: '#606080', font: { size: 9 } }, grid: { color: 'rgba(255,110,199,0.1)' } }
+                    }
+                }
+            });
+        }
+
+        async function updatePeriodsChart() {
+            const ctx = $('periodsChart'); if (!ctx) return;
+            const history = await Database.getAll('periodHistory');
+            if (!history.length) {
+                if ($('periodsChartInfo')) $('periodsChartInfo').textContent = 'Sen períodos pechados aínda';
+                return;
+            }
+            const last6 = history.slice(-6);
+            const labels = last6.map(p => {
+                const d = new Date(p.periodStart);
+                return d.toLocaleDateString('gl-ES', { day: '2-digit', month: 'short' });
+            });
+            const incomes = last6.map(p => r2(p.totalIncomes || 0));
+            const expenses = last6.map(p => r2((p.totalExpenses || 0) + (p.totalFixed || 0)));
+            const balances = last6.map(p => r2(p.balance || 0));
+            if ($('periodsChartInfo')) {
+                const trend = balances.length >= 2 ? balances[balances.length - 1] - balances[balances.length - 2] : 0;
+                $('periodsChartInfo').textContent = `Últimos ${last6.length} períodos · Tendencia: ${trend >= 0 ? '📈 +' : '📉 '}${fc(trend)}`;
+            }
+            if (charts.periods) charts.periods.destroy();
+            charts.periods = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [
+                        { label: 'Ingresos', data: incomes, backgroundColor: 'rgba(57,255,20,0.7)', borderRadius: 4 },
+                        { label: 'Gastos', data: expenses, backgroundColor: 'rgba(255,110,199,0.7)', borderRadius: 4 },
+                        { label: 'Balance', data: balances, type: 'line', borderColor: '#00f5ff', backgroundColor: 'transparent', borderWidth: 2, pointRadius: 4, pointBackgroundColor: balances.map(b => b >= 0 ? '#39ff14' : '#ff4757') }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#a0a0c0', font: { size: 10 } } } },
+                    scales: {
+                        x: { ticks: { color: '#606080', font: { size: 9 } }, grid: { color: 'rgba(255,110,199,0.1)' } },
+                        y: { ticks: { color: '#606080', font: { size: 9 } }, grid: { color: 'rgba(255,110,199,0.1)' } }
+                    }
+                }
+            });
+        }
+
+        function updateCashflowChart() {
+            const ctx = $('cashflowChart'); if (!ctx) return;
+            const activeBtn = document.querySelector('#cashflowBtns .horizon-btn.active');
+            const days = parseInt(activeBtn?.dataset.days) || 30;
+            const today = getEffectiveDate(); today.setHours(0, 0, 0, 0);
+            const r = FinancialEngine.calculateAvailableToday(AppState);
+            const dailyAvailable = r?.breakdown?.availablePerDay || 0;
+            const labels = [], balanceData = [], pointColors = [];
+            let runningBalance = AppState.accounts
+                .filter(a => a.forDailySpending && !a.archived)
+                .reduce((s, a) => s + (parseFloat(a.balance) || 0), 0);
+            for (let i = 0; i < days; i++) {
+                const day = new Date(today);
+                day.setDate(today.getDate() + i);
+                const dayOfMonth = day.getDate();
+                const isPayDay = dayOfMonth === (AppState.payDay || 1);
+                const fixedToday = AppState.recurringExpenses
+                    .filter(rec => rec.dayOfMonth === dayOfMonth && !rec.archived)
+                    .reduce((s, rec) => s + (parseFloat(rec.variable ? getVariableRecurringEstimate(rec) : rec.amount) || 0), 0);
+                if (isPayDay) {
+                    const avgIncome = AppState.incomes.slice(-3).reduce((s, x) => s + (parseFloat(x.amount) || 0), 0) / Math.max(AppState.incomes.slice(-3).length, 1);
+                    runningBalance += avgIncome;
+                }
+                runningBalance = r2(runningBalance - fixedToday);
+                labels.push(day.toLocaleDateString('gl-ES', { day: '2-digit', month: 'short' }));
+                balanceData.push(runningBalance);
+                pointColors.push(isPayDay ? '#39ff14' : fixedToday > 0 ? '#ffd93d' : runningBalance < 0 ? '#ff4757' : '#00f5ff');
+            }
+            const minBalance = Math.min(...balanceData);
+            if ($('cashflowInfo')) $('cashflowInfo').textContent = `Proxección ${days} días · Mínimo previsto: ${fc(minBalance)}${minBalance < 0 ? ' ⚠️' : ' ✅'}`;
+            if (charts.cashflow) charts.cashflow.destroy();
+            charts.cashflow = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Saldo proxectado',
+                        data: balanceData,
+                        borderColor: '#a855f7',
+                        backgroundColor: 'rgba(168,85,247,0.15)',
+                        fill: true,
+                        tension: 0.3,
+                        pointBackgroundColor: pointColors,
+                        pointRadius: 3
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#a0a0c0', font: { size: 10 } } },
+                        tooltip: { callbacks: { label: ctx => `${fc(ctx.raw)}` } }
+                    },
+                    scales: {
+                        x: { ticks: { color: '#606080', font: { size: 8 }, maxRotation: 45 }, grid: { color: 'rgba(255,110,199,0.1)' } },
+                        y: { ticks: { color: '#606080', font: { size: 9 } }, grid: { color: 'rgba(255,110,199,0.1)' } }
+                    }
+                }
+            });
+        }
+
+        function updateWeeklyChart() {
+            const ctx = $('weeklyChart'); if (!ctx) return;
+            const today = getEffectiveDate(); today.setHours(0, 0, 0, 0);
+            const dayNames = ['Dom', 'Lun', 'Mar', 'Mér', 'Xov', 'Ven', 'Sáb'];
+            const weekStart = new Date(today);
+            weekStart.setDate(today.getDate() - today.getDay());
+            const r = FinancialEngine.calculateAvailableToday(AppState);
+            const dailyAvailable = r?.availableToday || 0;
+            const labels = [], spentData = [], availableData = [];
+            for (let i = 0; i < 7; i++) {
+                const day = new Date(weekStart);
+                day.setDate(weekStart.getDate() + i);
+                const dayEnd = new Date(day); dayEnd.setHours(23, 59, 59, 999);
+                const spent = AppState.expenses
+                    .filter(e => { if (!e || !e.date) return false; const d = new Date(e.date); return d >= day && d <= dayEnd; })
+                    .reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+                const isToday = day.toDateString() === today.toDateString();
+                const isFuture = day > today;
+                labels.push((isToday ? '→ ' : '') + dayNames[day.getDay()]);
+                spentData.push(isFuture ? null : r2(spent));
+                availableData.push(r2(Math.abs(dailyAvailable)));
+            }
+            const totalWeek = spentData.filter(v => v !== null).reduce((s, v) => s + v, 0);
+            if ($('weeklyChartInfo')) $('weeklyChartInfo').textContent = `Semana do ${weekStart.toLocaleDateString('gl-ES', { day: '2-digit', month: 'short' })} · Gasto total: ${fc(totalWeek)} · Dispoñible/día: ${fc(dailyAvailable)}`;
+            if (charts.weekly) charts.weekly.destroy();
+            charts.weekly = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [
+                        { label: 'Gastado', data: spentData, backgroundColor: spentData.map(v => v !== null && v > Math.abs(dailyAvailable) ? 'rgba(255,71,87,0.8)' : 'rgba(255,110,199,0.7)'), borderRadius: 4 },
+                        { label: 'Dispoñible/día', data: availableData, type: 'line', borderColor: '#00f5ff', backgroundColor: 'transparent', borderWidth: 2, borderDash: [5, 5], pointRadius: 0 }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#a0a0c0', font: { size: 10 } } } },
+                    scales: {
+                        x: { ticks: { color: '#606080', font: { size: 10 } }, grid: { color: 'rgba(255,110,199,0.1)' } },
+                        y: { ticks: { color: '#606080', font: { size: 9 } }, grid: { color: 'rgba(255,110,199,0.1)' } }
+                    }
+                }
+            });
         }
 
         function updateComparisonChart() {
@@ -3906,6 +4710,9 @@ function initVoiceExpense() {
                 const f = e.target;
                 const editId = f.editId.value ? parseInt(f.editId.value) : null;
                 const data = { description: f.description.value, amount: parseFloat(f.amount.value) || 0, date: f.date.value, incomeType: f.incomeType.value, accountId: parseInt(f.accountId.value) };
+                if (data.amount <= 0) { toast('O importe debe ser maior que 0', 'error'); isProcessing = false; return; }
+                const _maxDate = new Date(); _maxDate.setFullYear(_maxDate.getFullYear() + 1);
+                if (new Date(data.date) > _maxDate) { toast('A data non pode ser máis dun ano no futuro', 'error'); isProcessing = false; return; }
 
                 if (editId) {
                     const original = AppState.incomes.find(i => i.id === editId);
@@ -3963,6 +4770,9 @@ function initVoiceExpense() {
                 const editId = f.editId.value ? parseInt(f.editId.value) : null;
                 const accountId = parseInt(f.accountId.value);
                 const data = { description: f.description.value, amount: parseFloat(f.amount.value) || 0, date: f.date.value, category: f.category.value, accountId: accountId };
+                if (data.amount <= 0) { toast('O importe debe ser maior que 0', 'error'); isProcessing = false; return; }
+                const _maxDateExp = new Date(); _maxDateExp.setFullYear(_maxDateExp.getFullYear() + 1);
+                if (new Date(data.date) > _maxDateExp) { toast('A data non pode ser máis dun ano no futuro', 'error'); isProcessing = false; return; }
 
                 if (editId) {
                     const original = AppState.expenses.find(ex => ex.id === editId);
@@ -4042,7 +4852,8 @@ function initVoiceExpense() {
                 toast('Non se pode asociar a unha conta arquivada', 'error');
                 return;
             }
-            const data = { description: f.description.value, amount: parseFloat(f.amount.value) || 0, dayOfMonth: parseInt(f.dayOfMonth.value) || 1, category: f.category.value, accountId: accountId };
+            const isVariable = $('recurringVariableCheckbox')?.classList.contains('checked') || false;
+            const data = { description: f.description.value, amount: parseFloat(f.amount.value) || 0, dayOfMonth: parseInt(f.dayOfMonth.value) || 1, category: f.category.value, accountId: accountId, variable: isVariable };
             const id = await Database.add('recurringExpenses', data);
             AppState.recurringExpenses.push({ ...data, id });
             closeModal('recurringModal'); updateAllUI(); runTests(); toast('Gasto fixo gardado ✓');
@@ -4111,7 +4922,7 @@ function initVoiceExpense() {
             if (!movements.length) {
                 html += `<div class="empty-state"><p>Sen movementos rexistrados</p></div>`;
             } else {
-                const sorted = [...movements].sort((a, b) => new Date(b.date) - new Date(a.date));
+                const sorted = [...movements].sort((a, b) => new Date(b.date || b.createdAt || 0) - new Date(a.date || a.createdAt || 0));
                 html += sorted.map(m => `
                 <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(255,110,199,0.1);">
                     <div>
@@ -4348,23 +5159,36 @@ function initVoiceExpense() {
             updateNotificationUI();
         }
         // PECHE DE PERÍODO
-        async function closePeriod() {
+        async function buildPeriodSnapshot() {
             const r = FinancialEngine.calculateAvailableToday(AppState);
             const pInfo = r.periodInfo;
-            if (!pInfo) { toast('Non se puido determinar o período actual', 'error'); return; }
-
-            const periodStart = pInfo.periodStart.toLocaleDateString('gl-ES');
-            const periodEnd = pInfo.periodEnd.toLocaleDateString('gl-ES');
-            const totalGastos = AppState.expenses.filter(e => {
+            if (!pInfo) return null;
+            const periodExpenses = AppState.expenses.filter(e => {
                 if (!e || !e.date) return false;
                 const d = new Date(e.date); d.setHours(0, 0, 0, 0);
                 return d >= pInfo.periodStart && d <= pInfo.periodEnd;
-            }).reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
-            const totalIngresos = AppState.incomes.filter(i => {
+            });
+            const periodIncomes = AppState.incomes.filter(i => {
                 if (!i || !i.date) return false;
                 const d = new Date(i.date); d.setHours(0, 0, 0, 0);
                 return d >= pInfo.periodStart && d <= pInfo.periodEnd;
-            }).reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
+            });
+            const totalGastos = periodExpenses.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+            const totalIngresos = periodIncomes.reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
+            const totalFixos = AppState.recurringExpenses.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+            const totalMetas = (AppState.savingsGoals || []).reduce((s, g) => s + (parseFloat(g.currentAmount) || 0), 0);
+            return {
+                pInfo, periodExpenses, periodIncomes,
+                totalGastos, totalIngresos, totalFixos, totalMetas,
+                periodStart: pInfo.periodStart.toLocaleDateString('gl-ES'),
+                periodEnd: pInfo.periodEnd.toLocaleDateString('gl-ES')
+            };
+        }
+
+        async function closePeriod() {
+            const snap = await buildPeriodSnapshot();
+            if (!snap) { toast('Non se puido determinar o período actual', 'error'); return; }
+            const { pInfo, periodExpenses, periodIncomes, totalGastos, totalIngresos, periodStart, periodEnd } = snap;
 
             const confirmMsg = `PECHE DE PERÍODO\n\nPeríodo: ${periodStart} → ${periodEnd}\nIngresos: ${fc(totalIngresos)}\nGastos: ${fc(totalGastos)}\n\nVaise exportar un JSON de respaldo e despois borraranse os ingresos e gastos do período actual. As contas, fixos, metas e débedas mantéñense.\n\n¿Continuar?`;
             if (!confirm(confirmMsg)) return;
@@ -4376,16 +5200,8 @@ function initVoiceExpense() {
                 period: { start: pInfo.periodStart.toISOString(), end: pInfo.periodEnd.toISOString() },
                 closedAt: new Date().toISOString(),
                 accounts: AppState.accounts,
-                incomes: AppState.incomes.filter(i => {
-                    if (!i || !i.date) return false;
-                    const d = new Date(i.date); d.setHours(0, 0, 0, 0);
-                    return d >= pInfo.periodStart && d <= pInfo.periodEnd;
-                }),
-                expenses: AppState.expenses.filter(e => {
-                    if (!e || !e.date) return false;
-                    const d = new Date(e.date); d.setHours(0, 0, 0, 0);
-                    return d >= pInfo.periodStart && d <= pInfo.periodEnd;
-                }),
+                incomes: periodIncomes,
+                expenses: periodExpenses,
                 recurringExpenses: AppState.recurringExpenses,
                 savingsGoals: AppState.savingsGoals,
                 debts: AppState.debts
@@ -4399,16 +5215,8 @@ function initVoiceExpense() {
             URL.revokeObjectURL(url);
 
             // 2. Borrar ingresos e gastos do período actual da BD e do estado
-            const expensesToDelete = AppState.expenses.filter(e => {
-                if (!e || !e.date) return false;
-                const d = new Date(e.date); d.setHours(0, 0, 0, 0);
-                return d >= pInfo.periodStart && d <= pInfo.periodEnd;
-            });
-            const incomesToDelete = AppState.incomes.filter(i => {
-                if (!i || !i.date) return false;
-                const d = new Date(i.date); d.setHours(0, 0, 0, 0);
-                return d >= pInfo.periodStart && d <= pInfo.periodEnd;
-            });
+            const expensesToDelete = periodExpenses;
+            const incomesToDelete = periodIncomes;
             for (const e of expensesToDelete) await Database.remove('expenses', e.id);
             for (const i of incomesToDelete) await Database.remove('incomes', i.id);
 
@@ -4426,47 +5234,47 @@ function initVoiceExpense() {
             AppState.incomes = await Database.getAll('incomes');
             AppState.recurringExpenses = await Database.getAll('recurringExpenses');
 
-            const totalFixosPeriodo = AppState.recurringExpenses.reduce((s,e) => s+(parseFloat(e.amount)||0), 0);
-const totalMetasPeriodo = (AppState.savingsGoals||[]).reduce((s,g) => s+(parseFloat(g.currentAmount)||0), 0);
+            const totalFixosPeriodo = AppState.recurringExpenses.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+            const totalMetasPeriodo = (AppState.savingsGoals || []).reduce((s, g) => s + (parseFloat(g.currentAmount) || 0), 0);
 
-const periodRecord = {
-    periodStart: pInfo.periodStart.toISOString(),
-    periodEnd: pInfo.periodEnd.toISOString(),
-    closedAt: new Date().toISOString(),
-    totalIncomes: totalIngresos,
-    totalExpenses: totalGastos,
-    totalFixed: totalFixosPeriodo,
-    totalSavings: totalMetasPeriodo,
-    balance: r2(totalIngresos - totalGastos - totalFixosPeriodo),
-    accounts: JSON.parse(JSON.stringify(AppState.accounts)),
-    incomes: backup.incomes,
-    expenses: backup.expenses,
-    recurringExpenses: AppState.recurringExpenses,
-    savingsGoals: AppState.savingsGoals
-};
-await Database.add('periodHistory', periodRecord);
+            const periodRecord = {
+                periodStart: pInfo.periodStart.toISOString(),
+                periodEnd: pInfo.periodEnd.toISOString(),
+                closedAt: new Date().toISOString(),
+                totalIncomes: totalIngresos,
+                totalExpenses: totalGastos,
+                totalFixed: totalFixosPeriodo,
+                totalSavings: totalMetasPeriodo,
+                balance: r2(totalIngresos - totalGastos - totalFixosPeriodo),
+                accounts: JSON.parse(JSON.stringify(AppState.accounts)),
+                incomes: backup.incomes,
+                expenses: backup.expenses,
+                recurringExpenses: AppState.recurringExpenses,
+                savingsGoals: AppState.savingsGoals
+            };
+            await Database.add('periodHistory', periodRecord);
 
-updateAllUI();
-addNotification('success', 'Período Pechado', `Período ${periodStart}→${periodEnd} arquivado correctamente`, '📦');
-toast('Período pechado e arquivado ✓');
+            updateAllUI();
+            addNotification('success', 'Período Pechado', `Período ${periodStart}→${periodEnd} arquivado correctamente`, '📦');
+            toast('Período pechado e arquivado ✓');
         }
         async function updatePeriodHistory() {
-    const c = $('periodHistoryList');
-    if (!c) return;
-    const history = await Database.getAll('periodHistory');
-    if (!history.length) {
-        c.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📚</div><p>Sen períodos pechados</p></div>';
-        return;
-    }
-    const sorted = [...history].sort((a,b) => new Date(b.closedAt) - new Date(a.closedAt));
-    const isSelecting = $('btnSelectPeriods')?.dataset.selecting === 'true';
+            const c = $('periodHistoryList');
+            if (!c) return;
+            const history = await Database.getAll('periodHistory');
+            if (!history.length) {
+                c.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📚</div><p>Sen períodos pechados</p></div>';
+                return;
+            }
+            const sorted = [...history].sort((a, b) => new Date(b.closedAt) - new Date(a.closedAt));
+            const isSelecting = $('btnSelectPeriods')?.dataset.selecting === 'true';
 
-    c.innerHTML = sorted.map(p => {
-        const ps = new Date(p.periodStart).toLocaleDateString('gl-ES', {day:'numeric',month:'short'});
-        const pe = new Date(p.periodEnd).toLocaleDateString('gl-ES', {day:'numeric',month:'short',year:'numeric'});
-        const balColor = p.balance >= 0 ? 'var(--accent-green)' : '#ff4757';
-        const checkbox = isSelecting ? `<input type="checkbox" class="period-checkbox" data-id="${p.id}" style="width:20px;height:20px;accent-color:var(--accent-cyan);margin-right:8px;flex-shrink:0;">` : '';
-        return `
+            c.innerHTML = sorted.map(p => {
+                const ps = new Date(p.periodStart).toLocaleDateString('gl-ES', { day: 'numeric', month: 'short' });
+                const pe = new Date(p.periodEnd).toLocaleDateString('gl-ES', { day: 'numeric', month: 'short', year: 'numeric' });
+                const balColor = p.balance >= 0 ? 'var(--accent-green)' : '#ff4757';
+                const checkbox = isSelecting ? `<input type="checkbox" class="period-checkbox" data-id="${p.id}" style="width:20px;height:20px;accent-color:var(--accent-cyan);margin-right:8px;flex-shrink:0;">` : '';
+                return `
         <div class="list-item" style="flex-direction:column;align-items:stretch;border-left-color:var(--accent-purple);margin-bottom:10px;">
             <div style="display:flex;align-items:center;margin-bottom:8px;">
                 ${checkbox}
@@ -4501,40 +5309,40 @@ toast('Período pechado e arquivado ✓');
                     <div style="color:var(--text-muted);">Metas</div>
                 </div>
                 <div style="text-align:center;padding:6px;background:rgba(10,10,26,0.6);border-radius:6px;">
-                    <div style="color:var(--text-secondary);font-family:'Orbitron',monospace;font-size:0.8rem;">${(p.incomes||[]).length + (p.expenses||[]).length}</div>
+                    <div style="color:var(--text-secondary);font-family:'Orbitron',monospace;font-size:0.8rem;">${(p.incomes || []).length + (p.expenses || []).length}</div>
                     <div style="color:var(--text-muted);">Movementos</div>
                 </div>
             </div>
         </div>`;
-    }).join('');
-}
+            }).join('');
+        }
 
-async function openPeriodDetail(id) {
-    const history = await Database.getAll('periodHistory');
-    const sorted = [...history].sort((a,b) => new Date(b.closedAt) - new Date(a.closedAt));
-    let currentIdx = sorted.findIndex(p => p.id === id);
+        async function openPeriodDetail(id) {
+            const history = await Database.getAll('periodHistory');
+            const sorted = [...history].sort((a, b) => new Date(b.closedAt) - new Date(a.closedAt));
+            let currentIdx = sorted.findIndex(p => p.id === id);
 
-    function renderDetail(idx) {
-        const p = sorted[idx];
-        if (!p) return;
-        const ps = new Date(p.periodStart).toLocaleDateString('gl-ES', {day:'numeric',month:'long',year:'numeric'});
-        const pe = new Date(p.periodEnd).toLocaleDateString('gl-ES', {day:'numeric',month:'long',year:'numeric'});
-        const balColor = p.balance >= 0 ? 'var(--accent-green)' : '#ff4757';
+            function renderDetail(idx) {
+                const p = sorted[idx];
+                if (!p) return;
+                const ps = new Date(p.periodStart).toLocaleDateString('gl-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+                const pe = new Date(p.periodEnd).toLocaleDateString('gl-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+                const balColor = p.balance >= 0 ? 'var(--accent-green)' : '#ff4757';
 
-        const incomesHtml = (p.incomes||[]).length ? (p.incomes||[]).map(i =>
-            `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,110,199,0.1);">
+                const incomesHtml = (p.incomes || []).length ? (p.incomes || []).map(i =>
+                    `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,110,199,0.1);">
                 <span style="color:var(--text-secondary);font-size:0.85rem;">${escapeHtml(i.description)} · ${fd(i.date)}</span>
                 <span style="color:var(--accent-green);font-family:'Orbitron',monospace;font-size:0.8rem;">+${fc(i.amount)}</span>
             </div>`).join('') : '<p style="color:var(--text-muted);font-size:0.8rem;">Sen ingresos</p>';
 
-        const expensesHtml = (p.expenses||[]).length ? (p.expenses||[]).map(e =>
-            `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,110,199,0.1);">
+                const expensesHtml = (p.expenses || []).length ? (p.expenses || []).map(e =>
+                    `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,110,199,0.1);">
                 <span style="color:var(--text-secondary);font-size:0.85rem;">${escapeHtml(e.description)} · ${fd(e.date)}</span>
                 <span style="color:var(--accent-pink);font-family:'Orbitron',monospace;font-size:0.8rem;">-${fc(e.amount)}</span>
             </div>`).join('') : '<p style="color:var(--text-muted);font-size:0.8rem;">Sen gastos</p>';
 
-        const content = document.getElementById('periodDetailContent');
-        if (content) content.innerHTML = `
+                const content = document.getElementById('periodDetailContent');
+                if (content) content.innerHTML = `
             <div style="text-align:center;margin-bottom:20px;">
                 <div style="font-family:'Orbitron',monospace;color:var(--accent-cyan);font-size:0.9rem;">📅 ${ps}</div>
                 <div style="font-family:'Orbitron',monospace;color:var(--accent-cyan);font-size:0.9rem;">→ ${pe}</div>
@@ -4570,23 +5378,23 @@ async function openPeriodDetail(id) {
                 <button class="btn btn-secondary" style="flex:1;font-size:0.8rem;" onclick="exportAllPeriodsJSON()">💾 Todos JSON</button>
             </div>`;
 
-        const nav = document.getElementById('periodDetailNav');
-        if (nav) nav.innerHTML = `
-            <button class="btn btn-secondary" style="flex:1;" onclick="navigatePeriod(${idx-1})" ${idx >= sorted.length-1 ? 'disabled' : ''}>◀ Anterior</button>
+                const nav = document.getElementById('periodDetailNav');
+                if (nav) nav.innerHTML = `
+            <button class="btn btn-secondary" style="flex:1;" onclick="navigatePeriod(${idx - 1})" ${idx >= sorted.length - 1 ? 'disabled' : ''}>◀ Anterior</button>
             <span style="color:var(--text-muted);font-size:0.8rem;align-self:center;">${sorted.length - idx} / ${sorted.length}</span>
-            <button class="btn btn-secondary" style="flex:1;" onclick="navigatePeriod(${idx+1})" ${idx <= 0 ? 'disabled' : ''}>Seguinte ▶</button>`;
-    }
+            <button class="btn btn-secondary" style="flex:1;" onclick="navigatePeriod(${idx + 1})" ${idx <= 0 ? 'disabled' : ''}>Seguinte ▶</button>`;
+            }
 
-    window.navigatePeriod = (idx) => {
-        if (idx < 0 || idx >= sorted.length) return;
-        currentIdx = idx;
-        renderDetail(currentIdx);
-    };
+            window.navigatePeriod = (idx) => {
+                if (idx < 0 || idx >= sorted.length) return;
+                currentIdx = idx;
+                renderDetail(currentIdx);
+            };
 
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay active';
-    overlay.id = 'periodDetailOverlay';
-    overlay.innerHTML = `
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay active';
+            overlay.id = 'periodDetailOverlay';
+            overlay.innerHTML = `
         <div class="modal" style="max-height:85vh;display:flex;flex-direction:column;">
             <div class="modal-header">
                 <h3 class="modal-title">📚 Detalle do Período</h3>
@@ -4595,33 +5403,33 @@ async function openPeriodDetail(id) {
             <div id="periodDetailNav" style="display:flex;gap:8px;margin-bottom:15px;"></div>
             <div id="periodDetailContent" style="overflow-y:auto;flex:1;"></div>
         </div>`;
-    document.body.appendChild(overlay);
-    overlay.onclick = e => { if(e.target === overlay) overlay.remove(); };
-    renderDetail(currentIdx);
-}
+            document.body.appendChild(overlay);
+            overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+            renderDetail(currentIdx);
+        }
 
-async function exportPeriodJSON(id) {
-    const history = await Database.getAll('periodHistory');
-    const p = history.find(x => x.id === id);
-    if (!p) return;
-    const blob = new Blob([JSON.stringify(p, null, 2)], {type:'application/json'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `cartinos_periodo_${new Date(p.periodStart).toISOString().slice(0,7)}.json`;
-    a.click();
-    toast('Período exportado ✓');
-}
+        async function exportPeriodJSON(id) {
+            const history = await Database.getAll('periodHistory');
+            const p = history.find(x => x.id === id);
+            if (!p) return;
+            const blob = new Blob([JSON.stringify(p, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `cartinos_periodo_${new Date(p.periodStart).toISOString().slice(0, 7)}.json`;
+            a.click();
+            toast('Período exportado ✓');
+        }
 
-async function exportAllPeriodsJSON() {
-    const history = await Database.getAll('periodHistory');
-    if (!history.length) { toast('Sen historial para exportar', 'error'); return; }
-    const blob = new Blob([JSON.stringify(history, null, 2)], {type:'application/json'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `cartinos_historial_completo_${new Date().toISOString().slice(0,10)}.json`;
-    a.click();
-    toast('Historial completo exportado ✓');
-}
+        async function exportAllPeriodsJSON() {
+            const history = await Database.getAll('periodHistory');
+            if (!history.length) { toast('Sen historial para exportar', 'error'); return; }
+            const blob = new Blob([JSON.stringify(history, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `cartinos_historial_completo_${new Date().toISOString().slice(0, 10)}.json`;
+            a.click();
+            toast('Historial completo exportado ✓');
+        }
 
         function updatePeriodCloseInfo() {
             const el = $('periodCloseInfo');
@@ -4634,7 +5442,120 @@ async function exportAllPeriodsJSON() {
             el.innerHTML = `Período actual: <strong>${ps} → ${pe}</strong> · Día ${p.dayInPeriod} de ${p.totalDays}`;
         }
 
+        //Modo Viaxe
+
+        function startTravelMode() {
+            const name = $('travelName').value.trim();
+            const start = $('travelStart').value;
+            const end = $('travelEnd').value;
+            const budget = parseFloat($('travelBudget').value) || 0;
+            if (!name) { toast('Introduce o nome da viaxe', 'error'); return; }
+            if (!start || !end) { toast('Introduce as datas', 'error'); return; }
+            if (new Date(end) <= new Date(start)) { toast('A data fin debe ser posterior ao inicio', 'error'); return; }
+            if (budget <= 0) { toast('Introduce un orzamento válido', 'error'); return; }
+            const days = Math.ceil((new Date(end) - new Date(start)) / (1000 * 60 * 60 * 24)) + 1;
+            const dailyBudget = r2(budget / days);
+            AppState.travelMode = { active: true, name, budget, startDate: start, endDate: end, dailyBudget };
+            saveAppConfig();
+            updateTravelModeUI();
+            toast(`✈️ Modo Viaxe "${name}" activado! ${fc(dailyBudget)}/día`);
+        }
+
+        function endTravelMode() {
+            if (!confirm(`Rematar a viaxe "${AppState.travelMode.name}"?`)) return;
+            const { name, budget, startDate, endDate } = AppState.travelMode;
+            const start = new Date(startDate); start.setHours(0, 0, 0, 0);
+            const end = new Date(endDate); end.setHours(23, 59, 59, 999);
+            const travelExpenses = AppState.expenses.filter(e => {
+                if (!e || !e.date) return false;
+                const d = new Date(e.date);
+                return d >= start && d <= end;
+            });
+            const totalSpent = travelExpenses.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+            const balance = r2(budget - totalSpent);
+            AppState.travelMode = { active: false, name: '', budget: 0, startDate: null, endDate: null, dailyBudget: 0 };
+            saveAppConfig();
+            updateTravelModeUI();
+            toast(`🏁 Viaxe "${name}" rematada! Gastado: ${fc(totalSpent)} de ${fc(budget)}. Balance: ${balance >= 0 ? '+' : ''}${fc(balance)}`);
+        }
+
+        function updateTravelModeUI() {
+            const tm = AppState.travelMode;
+            if (!tm || !tm.active) {
+                $('travelModeActive') && ($('travelModeActive').style.display = 'none');
+                $('travelModeForm') && ($('travelModeForm').style.display = 'block');
+                return;
+            }
+            $('travelModeActive') && ($('travelModeActive').style.display = 'block');
+            $('travelModeForm') && ($('travelModeForm').style.display = 'none');
+            const start = new Date(tm.startDate); start.setHours(0, 0, 0, 0);
+            const end = new Date(tm.endDate); end.setHours(23, 59, 59, 999);
+            const today = getEffectiveDate(); today.setHours(0, 0, 0, 0);
+            const travelExpenses = AppState.expenses.filter(e => {
+                if (!e || !e.date) return false;
+                const d = new Date(e.date); d.setHours(0, 0, 0, 0);
+                return d >= start && d <= end;
+            });
+            const totalSpent = travelExpenses.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+            const remaining = r2(tm.budget - totalSpent);
+            const daysLeft = Math.max(0, Math.ceil((end - today) / (1000 * 60 * 60 * 24)));
+            const dailyLeft = daysLeft > 0 ? r2(remaining / daysLeft) : 0;
+            if ($('travelModeTitle')) $('travelModeTitle').textContent = `✈️ ${tm.name}`;
+            if ($('travelModeInfo')) $('travelModeInfo').innerHTML = `
+                <div style="display:grid;gap:6px;margin-top:6px;">
+                    <div style="display:flex;justify-content:space-between;">
+                        <span>Orzamento</span><span style="color:var(--accent-cyan);font-family:'Orbitron',monospace;">${fc(tm.budget)}</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;">
+                        <span>Gastado</span><span style="color:var(--accent-pink);font-family:'Orbitron',monospace;">${fc(totalSpent)}</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;">
+                        <span>Restante</span><span style="color:${remaining >= 0 ? 'var(--accent-green)' : '#ff4757'};font-family:'Orbitron',monospace;">${fc(remaining)}</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;">
+                        <span>Dispoñible/día</span><span style="color:var(--accent-yellow);font-family:'Orbitron',monospace;">${fc(dailyLeft)} (${daysLeft} días)</span>
+                    </div>
+                    <div style="font-size:0.75rem;color:var(--text-muted);">${fd(tm.startDate)} → ${fd(tm.endDate)}</div>
+                </div>`;
+        }
+
         // EXPORT/IMPORT
+        function runPlanner() {
+            const income = parseFloat($('plannerIncome').value) || 0;
+            const savings = parseFloat($('plannerSavings').value) || 0;
+            if (income <= 0) { toast('Introduce os ingresos esperados', 'error'); return; }
+            const { periodStart, periodEnd, totalDays } = getPeriodDates(AppState.payDay || 1);
+            const totalFixed = AppState.recurringExpenses
+                .filter(r => !r.archived)
+                .reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
+            const totalSavings = savings * totalDays;
+            const available = income - totalFixed - totalSavings;
+            const dailyAvailable = available / totalDays;
+            const res = $('plannerResultContent');
+            res.innerHTML = `
+                <div style="display:grid;gap:8px;">
+                    <div style="display:flex;justify-content:space-between;font-size:0.9rem;">
+                        <span style="color:var(--text-secondary);">Ingresos esperados</span>
+                        <span style="color:var(--accent-green);font-family:'Orbitron',monospace;">${fc(income)}</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.9rem;">
+                        <span style="color:var(--text-secondary);">Gastos fixos</span>
+                        <span style="color:var(--accent-pink);font-family:'Orbitron',monospace;">-${fc(totalFixed)}</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.9rem;">
+                        <span style="color:var(--text-secondary);">Aforro reservado</span>
+                        <span style="color:var(--accent-purple);font-family:'Orbitron',monospace;">-${fc(totalSavings)}</span>
+                    </div>
+                    <hr style="border:none;border-top:1px solid rgba(255,110,199,0.2);">
+                    <div style="display:flex;justify-content:space-between;font-size:1rem;">
+                        <span style="color:var(--text-primary);font-weight:600;">Dispoñible ao día</span>
+                        <span style="color:${dailyAvailable > 0 ? 'var(--accent-cyan)' : '#ff4757'};font-family:'Orbitron',monospace;font-size:1.1rem;">${fc(dailyAvailable)}</span>
+                    </div>
+                    <div style="font-size:0.75rem;color:var(--text-muted);text-align:center;">Período de ${totalDays} días · ${totalFixed > 0 ? AppState.recurringExpenses.filter(r => !r.archived).length + ' gastos fixos incluídos' : 'Sen gastos fixos'}</div>
+                </div>`;
+            $('plannerResult').style.display = 'block';
+        }
+
         async function exportJSON() {
             const data = {
                 version: '4.0.0',
@@ -4642,6 +5563,7 @@ async function exportAllPeriodsJSON() {
                 payDay: AppState.payDay,
                 alertsConfig: AppState.alertsConfig,
                 extremeSavingMode: AppState.extremeSavingMode,
+                travelMode: AppState.travelMode,
                 categories: {
                     expense: loadCategories('expense'),
                     income: loadCategories('income'),
@@ -4660,320 +5582,325 @@ async function exportAllPeriodsJSON() {
             a.href = URL.createObjectURL(blob);
             a.download = `cartinos_${new Date().toISOString().split('T')[0]}.json`;
             a.click();
-            toast('Exportado ✓');
+            localStorage.setItem('cartinos_lastBackup', Date.now().toString());
+            toast('JSON Exportado ✓');
         }
 
         async function exportPDF(printMode = false) {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    const r = FinancialEngine.calculateAvailableToday(AppState);
-    const s = FinancialEngine.calculateMonthlyStats(AppState);
-    const pageW = 210, margin = 15, contentW = pageW - margin * 2;
-    let y = 0;
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+            const r = FinancialEngine.calculateAvailableToday(AppState);
+            const s = FinancialEngine.calculateMonthlyStats(AppState);
+            const pageW = 210, margin = 15, contentW = pageW - margin * 2;
+            let y = 0;
 
-    const colors = printMode ? {
-        pink: [180, 0, 120],
-        cyan: [0, 150, 180],
-        green: [0, 150, 0],
-        yellow: [180, 130, 0],
-        purple: [100, 0, 180],
-        dark: [255, 255, 255],
-        darkCard: [240, 240, 250],
-        textPrimary: [20, 20, 20],
-        textSecondary: [60, 60, 80],
-        textMuted: [120, 120, 140]
-    } : {
-        pink: [255, 110, 199],
-        cyan: [0, 245, 255],
-        green: [57, 255, 20],
-        yellow: [255, 217, 61],
-        purple: [168, 85, 247],
-        dark: [10, 10, 26],
-        darkCard: [26, 26, 58],
-        textPrimary: [255, 255, 255],
-        textSecondary: [160, 160, 192],
-        textMuted: [96, 96, 128]
-    };
+            const colors = printMode ? {
+                pink: [180, 0, 120],
+                cyan: [0, 150, 180],
+                green: [0, 150, 0],
+                yellow: [180, 130, 0],
+                purple: [100, 0, 180],
+                dark: [255, 255, 255],
+                darkCard: [240, 240, 250],
+                textPrimary: [20, 20, 20],
+                textSecondary: [60, 60, 80],
+                textMuted: [120, 120, 140]
+            } : {
+                pink: [255, 110, 199],
+                cyan: [0, 245, 255],
+                green: [57, 255, 20],
+                yellow: [255, 217, 61],
+                purple: [168, 85, 247],
+                dark: [10, 10, 26],
+                darkCard: [26, 26, 58],
+                textPrimary: [255, 255, 255],
+                textSecondary: [160, 160, 192],
+                textMuted: [96, 96, 128]
+            };
 
-    function setFont(size, style = 'normal', color = colors.textPrimary) {
-        doc.setFontSize(size);
-        doc.setFont('helvetica', style);
-        doc.setTextColor(...color);
-    }
+            function setFont(size, style = 'normal', color = colors.textPrimary) {
+                doc.setFontSize(size);
+                doc.setFont('helvetica', style);
+                doc.setTextColor(...color);
+            }
 
-    function drawRect(x, ry, w, h, color, radius = 3) {
-        doc.setFillColor(...color);
-        doc.roundedRect(x, ry, w, h, radius, radius, 'F');
-    }
+            function drawRect(x, ry, w, h, color, radius = 3) {
+                doc.setFillColor(...color);
+                doc.roundedRect(x, ry, w, h, radius, radius, 'F');
+            }
 
-    function checkPage(needed = 20) {
-        if (y + needed > 280) {
-            doc.addPage();
+            function checkPage(needed = 20) {
+                if (y + needed > 280) {
+                    doc.addPage();
+                    doc.setFillColor(...colors.dark);
+                    doc.rect(0, 0, 210, 297, 'F');
+                    y = 15;
+                }
+            }
+
+            function sectionTitle(title, icon) {
+                checkPage(20);
+                drawRect(margin, y, contentW, 10, colors.darkCard);
+                doc.setDrawColor(...colors.pink);
+                doc.setLineWidth(0.5);
+                doc.line(margin, y + 10, margin + contentW, y + 10);
+                setFont(10, 'bold', colors.cyan);
+                doc.text(`${icon} ${title.toUpperCase()}`, margin + 4, y + 7);
+                y += 14;
+            }
+
+            // ─── PORTADA ───
             doc.setFillColor(...colors.dark);
             doc.rect(0, 0, 210, 297, 'F');
-            y = 15;
+            drawRect(0, 0, 210, 60, colors.darkCard, 0);
+            doc.setDrawColor(...colors.pink);
+            doc.setLineWidth(0.3);
+            doc.line(0, 60, 210, 60);
+
+            setFont(28, 'bold', colors.pink);
+            doc.text('CARTIÑOS', 105, 25, { align: 'center' });
+            setFont(9, 'normal', colors.textSecondary);
+            doc.text('XESTIÓN FINANCEIRA PERSOAL', 105, 33, { align: 'center' });
+            setFont(8, 'normal', colors.textMuted);
+            doc.text(`Informe xerado o ${new Date().toLocaleDateString('gl-ES', { day: 'numeric', month: 'long', year: 'numeric' })}`, 105, 40, { align: 'center' });
+
+            if (r.periodInfo) {
+                const ps = r.periodInfo.periodStart.toLocaleDateString('gl-ES', { day: 'numeric', month: 'short' });
+                const pe = r.periodInfo.periodEnd.toLocaleDateString('gl-ES', { day: 'numeric', month: 'short', year: 'numeric' });
+                setFont(8, 'normal', colors.cyan);
+                doc.text(`Período actual: ${ps} → ${pe} · Día ${r.periodInfo.dayInPeriod} de ${r.periodInfo.totalDays}`, 105, 48, { align: 'center' });
+            }
+
+            y = 70;
+
+            // ─── RESUMO FINANCEIRO ───
+            sectionTitle('Resumo Financeiro', '💰');
+
+            const resumoData = [
+                { label: 'Dispoñible hoxe', value: fc(r.availableToday), color: r.availableToday >= 0 ? colors.green : [255, 71, 87] },
+                { label: 'Sen aforro', value: fc(r.availableWithoutSavings), color: colors.cyan },
+                { label: 'Total período', value: fc(r.totalAvailable), color: colors.cyan },
+                { label: 'Saldo total', value: fc(FinancialEngine.calculateTotalBalance(AppState.accounts)), color: colors.textPrimary },
+                { label: 'Aforro acumulado', value: fc(FinancialEngine.calculateTotalSavings(AppState.savingsGoals)), color: colors.purple },
+                { label: 'Comprometido', value: fc(r.breakdown.committedRecurring), color: colors.yellow },
+            ];
+
+            const colW = contentW / 3;
+            resumoData.forEach((item, i) => {
+                const col = i % 3;
+                const row = Math.floor(i / 3);
+                const rx = margin + col * colW;
+                const ry = y + row * 22;
+                drawRect(rx + 1, ry, colW - 2, 18, colors.darkCard);
+                setFont(7, 'normal', colors.textMuted);
+                doc.text(item.label.toUpperCase(), rx + colW / 2, ry + 5, { align: 'center' });
+                setFont(9, 'bold', item.color);
+                doc.text(item.value, rx + colW / 2, ry + 13, { align: 'center' });
+            });
+            y += Math.ceil(resumoData.length / 3) * 22 + 8;
+
+            // ─── KPIs ───
+            sectionTitle('Indicadores Financeiros (KPIs)', '📈');
+
+            const kpiIds = [
+                ['kpiSavingsRate', 'Taxa Aforro'],
+                ['kpiFixedRatio', 'Fixos/Ingresos'],
+                ['kpiCoverage', 'Cobertura'],
+                ['kpiDailyReal', 'Gasto Diario Real'],
+                ['kpiTrend', 'Tendencia'],
+                ['kpiDaysToZero', 'Días Ata Cero'],
+                ['kpiEmergencyFund', 'Aforro Fondo'],
+                ['kpiLiquidity', 'Liquidez'],
+                ['kpiDiscretionary', 'Discrecional'],
+                ['kpiNetWorth', 'Patrimonio Neto'],
+                ['kpiTotalSavingsRate', 'Taxa Aforro Total'],
+                ['kpiSustainableDebt', 'Débeda Sostible'],
+            ];
+
+            const kpiColW = contentW / 3;
+            kpiIds.forEach(([id, label], i) => {
+                const col = i % 3;
+                const row = Math.floor(i / 3);
+                const rx = margin + col * kpiColW;
+                const ry = y + row * 18;
+                checkPage(20);
+                drawRect(rx + 1, ry, kpiColW - 2, 15, colors.darkCard);
+                setFont(6, 'normal', colors.textMuted);
+                doc.text(label.toUpperCase(), rx + kpiColW / 2, ry + 5, { align: 'center' });
+                const el = document.getElementById(id);
+                const val = el ? el.textContent : '—';
+                setFont(8, 'bold', colors.cyan);
+                doc.text(val, rx + kpiColW / 2, ry + 12, { align: 'center' });
+            });
+            y += Math.ceil(kpiIds.length / 3) * 18 + 8;
+
+            // ─── GRÁFICOS ───
+            const chartIds = [
+                { id: 'dashboardChart', title: 'Evolución do Mes', icon: '📊' },
+                { id: 'comparisonChart', title: 'Comparativa 6 Meses', icon: '📈' },
+                { id: 'categoryChart', title: 'Gastos por Categoría', icon: '🥧' }
+            ];
+
+            for (const chart of chartIds) {
+                const canvas = document.getElementById(chart.id);
+                if (!canvas) continue;
+                try {
+                    const imgData = canvas.toDataURL('image/png');
+                    checkPage(80);
+                    sectionTitle(chart.title, chart.icon);
+                    const chartH = 55;
+                    drawRect(margin, y, contentW, chartH, colors.darkCard);
+                    doc.addImage(imgData, 'PNG', margin + 2, y + 2, contentW - 4, chartH - 4);
+                    y += chartH + 8;
+                } catch (e) {
+                    console.warn('Non se puido engadir o gráfico:', chart.id, e);
+                }
+            }
+
+            // ─── INGRESOS DO PERÍODO ───
+            const periodoIngresos = r.periodInfo ? AppState.incomes.filter(i => {
+                if (!i || !i.date) return false;
+                const d = new Date(i.date); d.setHours(0, 0, 0, 0);
+                return d >= r.periodInfo.periodStart && d <= r.periodInfo.periodEnd;
+            }).sort((a, b) => new Date(a.date) - new Date(b.date)) : [];
+
+            if (periodoIngresos.length) {
+                sectionTitle(`Ingresos do Período (${periodoIngresos.length})`, '💰');
+                periodoIngresos.forEach(i => {
+                    checkPage(8);
+                    drawRect(margin, y, contentW, 7, colors.darkCard);
+                    setFont(7, 'normal', colors.textSecondary);
+                    doc.text(fd(i.date), margin + 2, y + 5);
+                    doc.text(escapeHtml(i.description), margin + 25, y + 5);
+                    setFont(7, 'bold', colors.green);
+                    doc.text(`+${fc(i.amount)}`, margin + contentW - 2, y + 5, { align: 'right' });
+                    y += 8;
+                });
+                setFont(8, 'bold', colors.green);
+                checkPage(10);
+                doc.text(`Total: +${fc(periodoIngresos.reduce((s, i) => s + parseFloat(i.amount), 0))}`, margin + contentW, y + 5, { align: 'right' });
+                y += 10;
+            }
+
+            // ─── GASTOS DO PERÍODO ───
+            const periodoGastos = r.periodInfo ? AppState.expenses.filter(e => {
+                if (!e || !e.date) return false;
+                const d = new Date(e.date); d.setHours(0, 0, 0, 0);
+                return d >= r.periodInfo.periodStart && d <= r.periodInfo.periodEnd;
+            }).sort((a, b) => new Date(a.date) - new Date(b.date)) : [];
+
+            if (periodoGastos.length) {
+                sectionTitle(`Gastos do Período (${periodoGastos.length})`, '💸');
+                const catNames = { alimentacion: 'Alimentación', transporte: 'Transporte', ocio: 'Ocio', saude: 'Saúde', roupa: 'Roupa', cafe: 'Café', subscricions: 'Subscricións', outros: 'Outros', vivienda: 'Vivenda', servicios: 'Servizos', seguros: 'Seguros' };
+                periodoGastos.forEach(e => {
+                    checkPage(8);
+                    drawRect(margin, y, contentW, 7, colors.darkCard);
+                    setFont(7, 'normal', colors.textSecondary);
+                    doc.text(fd(e.date), margin + 2, y + 5);
+                    doc.text(escapeHtml(e.description), margin + 25, y + 5);
+                    setFont(6, 'normal', colors.textMuted);
+                    doc.text(catNames[e.category] || e.category || '', margin + 110, y + 5);
+                    setFont(7, 'bold', colors.pink);
+                    doc.text(`-${fc(e.amount)}`, margin + contentW - 2, y + 5, { align: 'right' });
+                    y += 8;
+                });
+                setFont(8, 'bold', colors.pink);
+                checkPage(10);
+                doc.text(`Total: -${fc(periodoGastos.reduce((s, e) => s + parseFloat(e.amount), 0))}`, margin + contentW, y + 5, { align: 'right' });
+                y += 10;
+            }
+
+            // ─── GASTOS FIXOS ───
+            if (AppState.recurringExpenses.length) {
+                sectionTitle('Gastos Fixos', '🔄');
+                const periodKey = getCurrentPeriodKey();
+                AppState.recurringExpenses.sort((a, b) => a.dayOfMonth - b.dayOfMonth).forEach(rec => {
+                    checkPage(8);
+                    const paid = rec.paidPeriods && rec.paidPeriods.includes(periodKey);
+                    drawRect(margin, y, contentW, 7, colors.darkCard);
+                    setFont(7, 'normal', colors.textSecondary);
+                    doc.text(`Día ${rec.dayOfMonth}`, margin + 2, y + 5);
+                    doc.text(escapeHtml(rec.description), margin + 20, y + 5);
+                    setFont(6, 'normal', paid ? colors.green : colors.yellow);
+                    doc.text(paid ? '✓ Pagado' : '○ Pendente', margin + 110, y + 5);
+                    setFont(7, 'bold', colors.yellow);
+                    doc.text(`-${fc(rec.amount)}`, margin + contentW - 2, y + 5, { align: 'right' });
+                    y += 8;
+                });
+                setFont(8, 'bold', colors.yellow);
+                checkPage(10);
+                doc.text(`Total: -${fc(AppState.recurringExpenses.reduce((s, e) => s + parseFloat(e.amount), 0))}`, margin + contentW, y + 5, { align: 'right' });
+                y += 10;
+            }
+
+            // ─── METAS DE AFORRO ───
+            if (AppState.savingsGoals.length) {
+                sectionTitle('Metas de Aforro', '🎯');
+                AppState.savingsGoals.forEach(g => {
+                    checkPage(16);
+                    drawRect(margin, y, contentW, 14, colors.darkCard);
+                    setFont(7, 'bold', colors.textPrimary);
+                    doc.text(escapeHtml(g.name), margin + 2, y + 5);
+                    setFont(6, 'normal', colors.textMuted);
+                    doc.text(`Obx: ${fc(g.targetAmount)} · Acum: ${fc(g.currentAmount)} · ${fc(g.dailyAmount)}/día`, margin + 2, y + 10);
+                    const pct = g.targetAmount > 0 ? Math.min((g.currentAmount / g.targetAmount) * 100, 100) : 0;
+                    const barW = contentW - 4;
+                    drawRect(margin + 2, y + 12, barW, 1.5, [40, 40, 80]);
+                    drawRect(margin + 2, y + 12, barW * pct / 100, 1.5, colors.purple);
+                    setFont(6, 'bold', colors.purple);
+                    doc.text(`${pct.toFixed(0)}%`, margin + contentW - 2, y + 10, { align: 'right' });
+                    y += 16;
+                });
+                y += 4;
+            }
+
+            // ─── DÉBEDAS ───
+            if (AppState.debts.length) {
+                sectionTitle('Débedas', '💳');
+                AppState.debts.forEach(d => {
+                    checkPage(10);
+                    const rem = d.amount - (d.paidAmount || 0);
+                    const dirIcon = d.direction === 'owe' ? '📤' : '📥';
+                    drawRect(margin, y, contentW, 8, colors.darkCard);
+                    setFont(7, 'normal', colors.textSecondary);
+                    doc.text(`${dirIcon} ${escapeHtml(d.person)} · ${escapeHtml(d.concept)}`, margin + 2, y + 5);
+                    setFont(7, 'bold', d.direction === 'owe' ? colors.pink : colors.green);
+                    doc.text(fc(rem), margin + contentW - 2, y + 5, { align: 'right' });
+                    y += 10;
+                });
+            }
+
+            // ─── PÉ DE PÁXINA ───
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFillColor(...colors.darkCard);
+                doc.rect(0, 285, 210, 12, 'F');
+                setFont(7, 'normal', colors.textMuted);
+                doc.text('Cartiños · Xestión Financeira Persoal', margin, 292);
+                doc.text(`${i} / ${pageCount}`, 210 - margin, 292, { align: 'right' });
+            }
+
+            doc.save(`cartinos_informe_${new Date().toISOString().slice(0, 10)}.pdf`);
+            toast('PDF exportado ✓');
         }
-    }
-
-    function sectionTitle(title, icon) {
-        checkPage(20);
-        drawRect(margin, y, contentW, 10, colors.darkCard);
-        doc.setDrawColor(...colors.pink);
-        doc.setLineWidth(0.5);
-        doc.line(margin, y + 10, margin + contentW, y + 10);
-        setFont(10, 'bold', colors.cyan);
-        doc.text(`${icon} ${title.toUpperCase()}`, margin + 4, y + 7);
-        y += 14;
-    }
-
-    // ─── PORTADA ───
-    doc.setFillColor(...colors.dark);
-    doc.rect(0, 0, 210, 297, 'F');
-    drawRect(0, 0, 210, 60, colors.darkCard, 0);
-    doc.setDrawColor(...colors.pink);
-    doc.setLineWidth(0.3);
-    doc.line(0, 60, 210, 60);
-
-    setFont(28, 'bold', colors.pink);
-    doc.text('CARTIÑOS', 105, 25, { align: 'center' });
-    setFont(9, 'normal', colors.textSecondary);
-    doc.text('XESTIÓN FINANCEIRA PERSOAL', 105, 33, { align: 'center' });
-    setFont(8, 'normal', colors.textMuted);
-    doc.text(`Informe xerado o ${new Date().toLocaleDateString('gl-ES', { day: 'numeric', month: 'long', year: 'numeric' })}`, 105, 40, { align: 'center' });
-
-    if (r.periodInfo) {
-        const ps = r.periodInfo.periodStart.toLocaleDateString('gl-ES', { day: 'numeric', month: 'short' });
-        const pe = r.periodInfo.periodEnd.toLocaleDateString('gl-ES', { day: 'numeric', month: 'short', year: 'numeric' });
-        setFont(8, 'normal', colors.cyan);
-        doc.text(`Período actual: ${ps} → ${pe} · Día ${r.periodInfo.dayInPeriod} de ${r.periodInfo.totalDays}`, 105, 48, { align: 'center' });
-    }
-
-    y = 70;
-
-    // ─── RESUMO FINANCEIRO ───
-    sectionTitle('Resumo Financeiro', '💰');
-
-    const resumoData = [
-        { label: 'Dispoñible hoxe', value: fc(r.availableToday), color: r.availableToday >= 0 ? colors.green : [255, 71, 87] },
-        { label: 'Sen aforro', value: fc(r.availableWithoutSavings), color: colors.cyan },
-        { label: 'Total período', value: fc(r.totalAvailable), color: colors.cyan },
-        { label: 'Saldo total', value: fc(FinancialEngine.calculateTotalBalance(AppState.accounts)), color: colors.textPrimary },
-        { label: 'Aforro acumulado', value: fc(FinancialEngine.calculateTotalSavings(AppState.savingsGoals)), color: colors.purple },
-        { label: 'Comprometido', value: fc(r.breakdown.committedRecurring), color: colors.yellow },
-    ];
-
-    const colW = contentW / 3;
-    resumoData.forEach((item, i) => {
-        const col = i % 3;
-        const row = Math.floor(i / 3);
-        const rx = margin + col * colW;
-        const ry = y + row * 22;
-        drawRect(rx + 1, ry, colW - 2, 18, colors.darkCard);
-        setFont(7, 'normal', colors.textMuted);
-        doc.text(item.label.toUpperCase(), rx + colW / 2, ry + 5, { align: 'center' });
-        setFont(9, 'bold', item.color);
-        doc.text(item.value, rx + colW / 2, ry + 13, { align: 'center' });
-    });
-    y += Math.ceil(resumoData.length / 3) * 22 + 8;
-
-    // ─── KPIs ───
-    sectionTitle('Indicadores Financeiros (KPIs)', '📈');
-
-    const kpiIds = [
-        ['kpiSavingsRate', 'Taxa Aforro'],
-        ['kpiFixedRatio', 'Fixos/Ingresos'],
-        ['kpiCoverage', 'Cobertura'],
-        ['kpiDailyReal', 'Gasto Diario Real'],
-        ['kpiTrend', 'Tendencia'],
-        ['kpiDaysToZero', 'Días Ata Cero'],
-        ['kpiEmergencyFund', 'Aforro Fondo'],
-        ['kpiLiquidity', 'Liquidez'],
-        ['kpiDiscretionary', 'Discrecional'],
-        ['kpiNetWorth', 'Patrimonio Neto'],
-        ['kpiTotalSavingsRate', 'Taxa Aforro Total'],
-        ['kpiSustainableDebt', 'Débeda Sostible'],
-    ];
-
-    const kpiColW = contentW / 3;
-    kpiIds.forEach(([ id, label ], i) => {
-        const col = i % 3;
-        const row = Math.floor(i / 3);
-        const rx = margin + col * kpiColW;
-        const ry = y + row * 18;
-        checkPage(20);
-        drawRect(rx + 1, ry, kpiColW - 2, 15, colors.darkCard);
-        setFont(6, 'normal', colors.textMuted);
-        doc.text(label.toUpperCase(), rx + kpiColW / 2, ry + 5, { align: 'center' });
-        const el = document.getElementById(id);
-        const val = el ? el.textContent : '—';
-        setFont(8, 'bold', colors.cyan);
-        doc.text(val, rx + kpiColW / 2, ry + 12, { align: 'center' });
-    });
-    y += Math.ceil(kpiIds.length / 3) * 18 + 8;
-
-    // ─── GRÁFICOS ───
-    const chartIds = [
-        { id: 'dashboardChart', title: 'Evolución do Mes', icon: '📊' },
-        { id: 'comparisonChart', title: 'Comparativa 6 Meses', icon: '📈' },
-        { id: 'categoryChart', title: 'Gastos por Categoría', icon: '🥧' }
-    ];
-
-    for (const chart of chartIds) {
-        const canvas = document.getElementById(chart.id);
-        if (!canvas) continue;
-        try {
-            const imgData = canvas.toDataURL('image/png');
-            checkPage(80);
-            sectionTitle(chart.title, chart.icon);
-            const chartH = 55;
-            drawRect(margin, y, contentW, chartH, colors.darkCard);
-            doc.addImage(imgData, 'PNG', margin + 2, y + 2, contentW - 4, chartH - 4);
-            y += chartH + 8;
-        } catch(e) {
-            console.warn('Non se puido engadir o gráfico:', chart.id, e);
-        }
-    }
-
-    // ─── INGRESOS DO PERÍODO ───
-    const periodoIngresos = r.periodInfo ? AppState.incomes.filter(i => {
-        if(!i||!i.date) return false;
-        const d = new Date(i.date); d.setHours(0,0,0,0);
-        return d >= r.periodInfo.periodStart && d <= r.periodInfo.periodEnd;
-    }).sort((a,b) => new Date(a.date)-new Date(b.date)) : [];
-
-    if (periodoIngresos.length) {
-        sectionTitle(`Ingresos do Período (${periodoIngresos.length})`, '💰');
-        periodoIngresos.forEach(i => {
-            checkPage(8);
-            drawRect(margin, y, contentW, 7, colors.darkCard);
-            setFont(7, 'normal', colors.textSecondary);
-            doc.text(fd(i.date), margin + 2, y + 5);
-            doc.text(escapeHtml(i.description), margin + 25, y + 5);
-            setFont(7, 'bold', colors.green);
-            doc.text(`+${fc(i.amount)}`, margin + contentW - 2, y + 5, { align: 'right' });
-            y += 8;
-        });
-        setFont(8, 'bold', colors.green);
-        checkPage(10);
-        doc.text(`Total: +${fc(periodoIngresos.reduce((s,i)=>s+parseFloat(i.amount),0))}`, margin + contentW, y + 5, { align: 'right' });
-        y += 10;
-    }
-
-    // ─── GASTOS DO PERÍODO ───
-    const periodoGastos = r.periodInfo ? AppState.expenses.filter(e => {
-        if(!e||!e.date) return false;
-        const d = new Date(e.date); d.setHours(0,0,0,0);
-        return d >= r.periodInfo.periodStart && d <= r.periodInfo.periodEnd;
-    }).sort((a,b) => new Date(a.date)-new Date(b.date)) : [];
-
-    if (periodoGastos.length) {
-        sectionTitle(`Gastos do Período (${periodoGastos.length})`, '💸');
-        const catNames = { alimentacion:'Alimentación', transporte:'Transporte', ocio:'Ocio', saude:'Saúde', roupa:'Roupa', cafe:'Café', subscricions:'Subscricións', outros:'Outros', vivienda:'Vivenda', servicios:'Servizos', seguros:'Seguros' };
-        periodoGastos.forEach(e => {
-            checkPage(8);
-            drawRect(margin, y, contentW, 7, colors.darkCard);
-            setFont(7, 'normal', colors.textSecondary);
-            doc.text(fd(e.date), margin + 2, y + 5);
-            doc.text(escapeHtml(e.description), margin + 25, y + 5);
-            setFont(6, 'normal', colors.textMuted);
-            doc.text(catNames[e.category]||e.category||'', margin + 110, y + 5);
-            setFont(7, 'bold', colors.pink);
-            doc.text(`-${fc(e.amount)}`, margin + contentW - 2, y + 5, { align: 'right' });
-            y += 8;
-        });
-        setFont(8, 'bold', colors.pink);
-        checkPage(10);
-        doc.text(`Total: -${fc(periodoGastos.reduce((s,e)=>s+parseFloat(e.amount),0))}`, margin + contentW, y + 5, { align: 'right' });
-        y += 10;
-    }
-
-    // ─── GASTOS FIXOS ───
-    if (AppState.recurringExpenses.length) {
-        sectionTitle('Gastos Fixos', '🔄');
-        const periodKey = getCurrentPeriodKey();
-        AppState.recurringExpenses.sort((a,b) => a.dayOfMonth - b.dayOfMonth).forEach(rec => {
-            checkPage(8);
-            const paid = rec.paidPeriods && rec.paidPeriods.includes(periodKey);
-            drawRect(margin, y, contentW, 7, colors.darkCard);
-            setFont(7, 'normal', colors.textSecondary);
-            doc.text(`Día ${rec.dayOfMonth}`, margin + 2, y + 5);
-            doc.text(escapeHtml(rec.description), margin + 20, y + 5);
-            setFont(6, 'normal', paid ? colors.green : colors.yellow);
-            doc.text(paid ? '✓ Pagado' : '○ Pendente', margin + 110, y + 5);
-            setFont(7, 'bold', colors.yellow);
-            doc.text(`-${fc(rec.amount)}`, margin + contentW - 2, y + 5, { align: 'right' });
-            y += 8;
-        });
-        setFont(8, 'bold', colors.yellow);
-        checkPage(10);
-        doc.text(`Total: -${fc(AppState.recurringExpenses.reduce((s,e)=>s+parseFloat(e.amount),0))}`, margin + contentW, y + 5, { align: 'right' });
-        y += 10;
-    }
-
-    // ─── METAS DE AFORRO ───
-    if (AppState.savingsGoals.length) {
-        sectionTitle('Metas de Aforro', '🎯');
-        AppState.savingsGoals.forEach(g => {
-            checkPage(16);
-            drawRect(margin, y, contentW, 14, colors.darkCard);
-            setFont(7, 'bold', colors.textPrimary);
-            doc.text(escapeHtml(g.name), margin + 2, y + 5);
-            setFont(6, 'normal', colors.textMuted);
-            doc.text(`Obx: ${fc(g.targetAmount)} · Acum: ${fc(g.currentAmount)} · ${fc(g.dailyAmount)}/día`, margin + 2, y + 10);
-            const pct = g.targetAmount > 0 ? Math.min((g.currentAmount/g.targetAmount)*100, 100) : 0;
-            const barW = contentW - 4;
-            drawRect(margin + 2, y + 12, barW, 1.5, [40, 40, 80]);
-            drawRect(margin + 2, y + 12, barW * pct / 100, 1.5, colors.purple);
-            setFont(6, 'bold', colors.purple);
-            doc.text(`${pct.toFixed(0)}%`, margin + contentW - 2, y + 10, { align: 'right' });
-            y += 16;
-        });
-        y += 4;
-    }
-
-    // ─── DÉBEDAS ───
-    if (AppState.debts.length) {
-        sectionTitle('Débedas', '💳');
-        AppState.debts.forEach(d => {
-            checkPage(10);
-            const rem = d.amount - (d.paidAmount||0);
-            const dirIcon = d.direction === 'owe' ? '📤' : '📥';
-            drawRect(margin, y, contentW, 8, colors.darkCard);
-            setFont(7, 'normal', colors.textSecondary);
-            doc.text(`${dirIcon} ${escapeHtml(d.person)} · ${escapeHtml(d.concept)}`, margin + 2, y + 5);
-            setFont(7, 'bold', d.direction === 'owe' ? colors.pink : colors.green);
-            doc.text(fc(rem), margin + contentW - 2, y + 5, { align: 'right' });
-            y += 10;
-        });
-    }
-
-    // ─── PÉ DE PÁXINA ───
-    const pageCount = doc.internal.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFillColor(...colors.darkCard);
-        doc.rect(0, 285, 210, 12, 'F');
-        setFont(7, 'normal', colors.textMuted);
-        doc.text('Cartiños · Xestión Financeira Persoal', margin, 292);
-        doc.text(`${i} / ${pageCount}`, 210 - margin, 292, { align: 'right' });
-    }
-
-    doc.save(`cartinos_informe_${new Date().toISOString().slice(0,10)}.pdf`);
-    toast('PDF exportado ✓');
-}
 
         // NOVO: Export CSV
+        function sanitizeCSV(str) {
+            if (!str) return '';
+            return String(str).replace(/"/g, '""').replace(/[\r\n]/g, ' ').trim();
+        }
         function exportCSV() {
             let csv = "Data,Descrición,Cantidade,Categoría,Tipo,Conta\n";
 
             AppState.expenses.forEach(e => {
                 const acc = AppState.accounts.find(a => a.id === e.accountId);
-                csv += `${e.date},"${e.description}",-${e.amount},${e.category},Gasto,"${acc?.name || ''}"\n`;
+                csv += `${e.date},"${sanitizeCSV(e.description)}",-${e.amount},"${sanitizeCSV(e.category)}",Gasto,"${sanitizeCSV(acc?.name || '')}"\n`;
             });
 
             AppState.incomes.forEach(i => {
                 const acc = AppState.accounts.find(a => a.id === i.accountId);
-                csv += `${i.date},"${i.description}",${i.amount},${i.incomeType},Ingreso,"${acc?.name || ''}"\n`;
+                csv += `${i.date},"${sanitizeCSV(i.description)}",${i.amount},"${sanitizeCSV(i.incomeType)}",Ingreso,"${sanitizeCSV(acc?.name || '')}"\n`;
             });
 
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -5045,9 +5972,13 @@ async function exportAllPeriodsJSON() {
                 if (data.payDay) AppState.payDay = data.payDay;
                 if (data.alertsConfig) AppState.alertsConfig = data.alertsConfig;
                 if (data.extremeSavingMode) AppState.extremeSavingMode = data.extremeSavingMode;
+                if (data.travelMode) AppState.travelMode = data.travelMode;
                 await saveAppConfig();
                 await loadData();
                 updateAllUI();
+                updateCategorySelects();
+                updateCategorySettingsUI();
+                runTests();
                 toast('Importado ✓ — referencias actualizadas');
             } catch (err) { toast('Erro: ' + err.message, 'error'); }
             e.target.value = '';
@@ -5140,8 +6071,21 @@ async function exportAllPeriodsJSON() {
                     `¿Continuar?`;
                 if (!confirm(msg)) return;
 
+                const { periodStart, periodEnd } = getPeriodDates(payDay);
                 for (const rec of recurrentesConPagos) {
                     rec.paidPeriods = [];
+                    const recDay = rec.dayOfMonth || 1;
+                    const recDateThisPeriod = new Date(periodStart);
+                    recDateThisPeriod.setDate(recDay);
+                    const alreadyPaid = AppState.expenses.some(e =>
+                        e.description === rec.name &&
+                        new Date(e.date) >= periodStart &&
+                        new Date(e.date) <= periodEnd
+                    );
+                    if (alreadyPaid) {
+                        const periodKey = periodStart.toISOString().split('T')[0];
+                        rec.paidPeriods = [periodKey];
+                    }
                     await Database.update('recurringExpenses', rec);
                 }
                 AppState.recurringExpenses = await Database.getAll('recurringExpenses');
@@ -5193,34 +6137,35 @@ async function exportAllPeriodsJSON() {
                 $('btnExportJSON')?.addEventListener('click', exportJSON);
                 $('btnExportCSV')?.addEventListener('click', exportCSV);
                 $('btnExportPDF')?.addEventListener('click', () => {
-    const print = confirm('¿Exportar para imprimir?\n\nAcepta → Fondo branco (para imprimir)\nCancela → Fondo escuro (para pantalla)');
-    exportPDF(print);
-});                $('btnImport')?.addEventListener('click', () => $('importFile').click());
+                    const print = confirm('¿Exportar para imprimir?\n\nAcepta → Fondo branco (para imprimir)\nCancela → Fondo escuro (para pantalla)');
+                    exportPDF(print);
+                }); $('btnImport')?.addEventListener('click', () => $('importFile').click());
                 $('importFile')?.addEventListener('change', importData);
                 $('btnReset')?.addEventListener('click', resetData);
                 $('btnSavePayDay')?.addEventListener('click', savePayDay);
                 $('btnClosePeriod')?.addEventListener('click', closePeriod);
-                $('btnSelectPeriods')?.addEventListener('click', function() {
-    const isSelecting = this.dataset.selecting === 'true';
-    this.dataset.selecting = isSelecting ? 'false' : 'true';
-    this.textContent = isSelecting ? '☑ Seleccionar' : '✕ Cancelar';
-    $('btnExportSelected').style.display = isSelecting ? 'none' : 'block';
-    updatePeriodHistory();
-});
+                updateTravelModeUI();
+                $('btnSelectPeriods')?.addEventListener('click', function () {
+                    const isSelecting = this.dataset.selecting === 'true';
+                    this.dataset.selecting = isSelecting ? 'false' : 'true';
+                    this.textContent = isSelecting ? '☑ Seleccionar' : '✕ Cancelar';
+                    $('btnExportSelected').style.display = isSelecting ? 'none' : 'block';
+                    updatePeriodHistory();
+                });
 
-$('btnExportSelected')?.addEventListener('click', async function() {
-    const checked = document.querySelectorAll('.period-checkbox:checked');
-    if (!checked.length) { toast('Selecciona polo menos un período', 'error'); return; }
-    const ids = [...checked].map(c => parseInt(c.dataset.id));
-    const history = await Database.getAll('periodHistory');
-    const selected = history.filter(p => ids.includes(p.id));
-    const blob = new Blob([JSON.stringify(selected, null, 2)], {type:'application/json'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `cartinos_periodos_seleccionados_${new Date().toISOString().slice(0,10)}.json`;
-    a.click();
-    toast(`${selected.length} período(s) exportado(s) ✓`);
-});
+                $('btnExportSelected')?.addEventListener('click', async function () {
+                    const checked = document.querySelectorAll('.period-checkbox:checked');
+                    if (!checked.length) { toast('Selecciona polo menos un período', 'error'); return; }
+                    const ids = [...checked].map(c => parseInt(c.dataset.id));
+                    const history = await Database.getAll('periodHistory');
+                    const selected = history.filter(p => ids.includes(p.id));
+                    const blob = new Blob([JSON.stringify(selected, null, 2)], { type: 'application/json' });
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = `cartinos_periodos_seleccionados_${new Date().toISOString().slice(0, 10)}.json`;
+                    a.click();
+                    toast(`${selected.length} período(s) exportado(s) ✓`);
+                });
 
                 // Categorías
                 $('btnAddExpenseCat')?.addEventListener('click', () => addCategory('expense'));
@@ -5301,9 +6246,18 @@ $('btnExportSelected')?.addEventListener('click', async function() {
                 $('horizonBtns').addEventListener('click', e => {
                     const btn = e.target.closest('.horizon-btn');
                     if (btn) {
-                        document.querySelectorAll('.horizon-btn').forEach(b => b.classList.remove('active'));
+                        document.querySelectorAll('#horizonBtns .horizon-btn').forEach(b => b.classList.remove('active'));
                         btn.classList.add('active');
                         updateSimulator();
+                    }
+                });
+
+                $('cashflowBtns')?.addEventListener('click', e => {
+                    const btn = e.target.closest('.horizon-btn');
+                    if (btn) {
+                        document.querySelectorAll('#cashflowBtns .horizon-btn').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        updateCashflowChart();
                     }
                 });
 
