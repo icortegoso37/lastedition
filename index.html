@@ -7055,8 +7055,10 @@
         let swipeStartX = 0;
         let swipeElement = null;
 
-        function setupSwipeDelete() {
+      function setupSwipeDelete() {
             document.addEventListener('touchstart', e => {
+                // Se o tap é nun botón de acción, non activar swipe
+                if (e.target.closest('.list-item-actions')) return;
                 const target = e.target.closest('.list-item');
                 if (!target || target.closest('.modal')) return;
                 // Pechar calquera swipe aberto
@@ -7138,8 +7140,9 @@
         let pullStartY = 0;
         let isPulling = false;
 
-        function setupPullToRefresh() {
+         function setupPullToRefresh() {
             document.addEventListener('touchstart', e => {
+                if (e.target.closest('.list-item-actions')) return;
                 if (window.scrollY === 0) {
                     pullStartY = e.touches[0].pageY;
                 }
