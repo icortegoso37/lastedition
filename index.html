@@ -639,10 +639,28 @@
         .list-item-amount.neutral {
             color: var(--accent-cyan);
         }
+         .list-item {
+            position: relative;
+            overflow: hidden;
+        }
 
-        .list-item-actions {
+         .list-item-actions {
             display: flex;
             gap: 6px;
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            align-items: center;
+            padding: 0 8px;
+            background: linear-gradient(90deg, transparent, var(--bg-tertiary) 30%);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+        .list-item.swiped .list-item-actions {
+            opacity: 1;
+            pointer-events: all;
         }
 
         .btn-icon {
@@ -1332,7 +1350,8 @@
             <button class="nav-tab" data-section="recurring">Fixos</button>
             <button class="nav-tab" data-section="analysis">Análise</button>
             <button class="nav-tab" data-section="calendar">Calendario</button>
-            <button class="nav-tab" data-section="settings">Axustes</button>
+            <button class="nav-tab" data-section="tools">Ferramentas</buttom>
+                <button class="nav-tab" data-section="settings">Axustes</button>
         </nav>
         <!-- SECTIONS -->
         <section class="section active" id="section-dashboard">
@@ -1599,6 +1618,12 @@
             </div>
             <div class="card">
                 <div class="card-header">
+                    <h2 class="card-title">🎯 Regra 50/30/20</h2>
+                </div>
+                <div id="rule502030" style="padding:4px 0;"></div>
+            </div>
+            <div class="card">
+                <div class="card-header">
                     <h2 class="card-title">📈 Comparativa</h2>
                 </div>
                 <div class="chart-container"><canvas id="comparisonChart"></canvas></div>
@@ -1617,6 +1642,102 @@
                 </div>
                 <div class="chart-container" style="height:220px;"><canvas id="categoryChart"></canvas></div>
                 <div id="trafficLightFull" style="margin-top:15px;"></div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">📊 Saúde Financeira</h2>
+                </div>
+                <div id="healthScoreDisplay" style="text-align:center;padding:20px 0;"></div>
+            </div>
+        </section>
+
+        <section class="section" id="section-calendar">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">📅 Calendario</h2>
+                    <div class="btn-group">
+                        <button class="btn btn-secondary" onclick="changeCalendarMonth(-1)">◀</button>
+                        <button class="btn btn-secondary" onclick="goToTodayCalendar()">Hoxe</button>
+                        <button class="btn btn-secondary" onclick="changeCalendarMonth(1)">▶</button>
+                    </div>
+                </div>
+                <div id="calendarMonth"
+                    style="text-align:center;margin-bottom:15px;font-family:'Orbitron',monospace;color:var(--accent-cyan);">
+                </div>
+                <div id="calendarGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;"></div>
+                <div id="calendarEvents" style="margin-top:20px;"></div>
+            </div>
+        </section>
+
+        <section class="section" id="section-tools">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">🧮 Podo Permitirmo?</h2>
+                </div>
+                <p style="color:var(--text-muted);margin-bottom:12px;font-size:0.8rem;">Introduce un importe e a app
+                    diche se podes permitircho hoxe.</p>
+                <div class="form-group">
+                    <label class="form-label">Importe (€)</label>
+                    <input type="number" class="form-input" id="affordAmount" placeholder="Ex: 150" step="0.01"
+                        inputmode="decimal">
+                </div>
+                <button class="btn btn-primary" style="width:100%;" onclick="checkCanAfford()">Comprobar</button>
+                <div id="affordResult"
+                    style="display:none;margin-top:15px;padding:15px;background:rgba(0,245,255,0.08);border-radius:12px;">
+                </div>
+            </div>
+            <div class="card" id="travelModeCard">
+                <div class="card-header">
+                    <h2 class="card-title">✈️ Modo Viaxe</h2>
+                </div>
+                 <div id="travelModeActive"
+                    style="display:none;margin-bottom:15px;padding:12px;background:rgba(0,245,255,0.08);border-radius:10px;">
+                    <div style="font-family:'Orbitron',monospace;font-size:0.8rem;color:var(--accent-cyan);margin-bottom:6px;"
+                        id="travelModeTitle">Viaxe activa</div>
+                    <div style="font-size:0.85rem;color:var(--text-secondary);" id="travelModeInfo"></div>
+                    <div style="margin-top:12px;">
+                        <div style="font-family:'Orbitron',monospace;font-size:0.7rem;color:var(--accent-pink);margin-bottom:8px;text-transform:uppercase;">Rexistrar pago</div>
+                        <div style="display:flex;gap:6px;margin-bottom:6px;">
+                            <select class="form-select" id="travelPayer" style="flex:1;"></select>
+                            <input type="number" class="form-input" id="travelPayAmount" placeholder="€" step="0.01" inputmode="decimal" style="width:80px;">
+                        </div>
+                        <input type="text" class="form-input" id="travelPayConcept" placeholder="Concepto (opcional)" style="margin-bottom:6px;">
+                        <button class="btn btn-primary" style="width:100%;" onclick="addTravelPayment()">+ Engadir pago</button>
+                    </div>
+                    <div id="travelSplitResult" style="margin-top:12px;"></div>
+                    <div style="margin-top:10px;display:flex;gap:8px;">
+                        <button class="btn btn-danger" style="flex:1;" onclick="endTravelMode()">🏁 Rematar Viaxe</button>
+                    </div>
+                </div>
+                <div id="travelModeForm">
+                    <p style="color:var(--text-muted);margin-bottom:12px;font-size:0.8rem;">Crea un período temporal con
+                        orzamento propio sen alterar o teu ciclo de cobro normal.</p>
+                    <div class="form-group">
+                        <label class="form-label">Nome da viaxe</label>
+                        <input type="text" class="form-input" id="travelName" placeholder="Ex: Viaxe Portugal">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Data inicio</label>
+                            <input type="date" class="form-input" id="travelStart">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Data fin</label>
+                            <input type="date" class="form-input" id="travelEnd">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Orzamento total (€) <span style="color:var(--text-muted);font-size:0.75rem;">— opcional</span></label>
+                        <input type="number" class="form-input" id="travelBudget" placeholder="Deixa baleiro se non tes orzamento" step="0.01" inputmode="decimal">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Participantes (separados por coma)</label>
+                        <input type="text" class="form-input" id="travelParticipants" placeholder="Ex: Iara, Xurxo, Roberto">
+                        <div style="font-size:0.72rem;color:var(--text-muted);margin-top:4px;">Ti sempre estás incluída como primeiro participante</div>
+                    </div>
+                    <button class="btn btn-primary"
+                        style="width:100%;background:linear-gradient(135deg,var(--accent-cyan),var(--accent-purple));"
+                        onclick="startTravelMode()">✈️ Iniciar Modo Viaxe</button>                </div>
             </div>
             <div class="card">
                 <div class="card-header">
@@ -1652,23 +1773,52 @@
                 </div>
                 <div class="chart-container"><canvas id="simulatorChart"></canvas></div>
             </div>
-        </section>
-
-        <section class="section" id="section-calendar">
             <div class="card">
                 <div class="card-header">
-                    <h2 class="card-title">📅 Calendario</h2>
-                    <div class="btn-group">
-                        <button class="btn btn-secondary" onclick="changeCalendarMonth(-1)">◀</button>
-                        <button class="btn btn-secondary" onclick="goToTodayCalendar()">Hoxe</button>
-                        <button class="btn btn-secondary" onclick="changeCalendarMonth(1)">▶</button>
+                    <h2 class="card-title">📚 Historial de Períodos</h2>
+                    <div style="display:flex;gap:8px;">
+                        <button class="btn btn-secondary" id="btnSelectPeriods"
+                            style="padding:6px 10px;font-size:0.75rem;min-height:36px;">☑ Seleccionar</button>
+                        <button class="btn btn-primary" id="btnExportSelected"
+                            style="padding:6px 10px;font-size:0.75rem;min-height:36px;display:none;">💾
+                            Exportar</button>
                     </div>
                 </div>
-                <div id="calendarMonth"
-                    style="text-align:center;margin-bottom:15px;font-family:'Orbitron',monospace;color:var(--accent-cyan);">
+                <div id="periodHistoryList">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📚</div>
+                        <p>Sen períodos pechados</p>
+                    </div>
                 </div>
-                <div id="calendarGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;"></div>
-                <div id="calendarEvents" style="margin-top:20px;"></div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">📦 Produtos Frecuentes</h2>
+                </div>
+                <p style="color:var(--text-muted);margin-bottom:12px;font-size:0.8rem;">Rexistra o prezo de produtos
+                    habituais e ve a súa evolución.</p>
+                <div style="display:flex;gap:8px;margin-bottom:12px;">
+                    <input type="text" class="form-input" id="productName" placeholder="Ex: Menú Bar Pepe"
+                        style="flex:1;">
+                    <input type="number" class="form-input" id="productPrice" placeholder="€" step="0.01"
+                        inputmode="decimal" style="width:80px;">
+                    <button class="btn btn-primary" onclick="addProductPrice()" style="white-space:nowrap;">+
+                        Engadir</button>
+                </div>
+                <div id="productHistoryList"></div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">💾 Datos</h2>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="btnExportJSON">JSON</button>
+                    <button class="btn btn-secondary" id="btnExportCSV">CSV</button>
+                    <button class="btn btn-secondary" id="btnExportPDF">PDF</button>
+                    <button class="btn btn-secondary" id="btnImport">Importar</button>
+                    <input type="file" id="importFile" accept=".json" style="display:none;">
+                    <button class="btn btn-danger" id="btnReset">Borrar</button>
+                </div>
             </div>
         </section>
 
@@ -1699,47 +1849,7 @@
                     style="width:100%;background:linear-gradient(135deg,var(--accent-cyan),var(--accent-green));">📦
                     Pechar Período Actual</button>
             </div>
-            <div class="card" id="travelModeCard">
-                <div class="card-header">
-                    <h2 class="card-title">✈️ Modo Viaxe</h2>
-                </div>
-                <div id="travelModeActive"
-                    style="display:none;margin-bottom:15px;padding:12px;background:rgba(0,245,255,0.08);border-radius:10px;">
-                    <div style="font-family:'Orbitron',monospace;font-size:0.8rem;color:var(--accent-cyan);margin-bottom:6px;"
-                        id="travelModeTitle">Viaxe activa</div>
-                    <div style="font-size:0.85rem;color:var(--text-secondary);" id="travelModeInfo"></div>
-                    <div style="margin-top:10px;display:flex;gap:8px;">
-                        <button class="btn btn-danger" style="flex:1;" onclick="endTravelMode()">🏁 Rematar
-                            Viaxe</button>
-                    </div>
-                </div>
-                <div id="travelModeForm">
-                    <p style="color:var(--text-muted);margin-bottom:12px;font-size:0.8rem;">Crea un período temporal con
-                        orzamento propio sen alterar o teu ciclo de cobro normal.</p>
-                    <div class="form-group">
-                        <label class="form-label">Nome da viaxe</label>
-                        <input type="text" class="form-input" id="travelName" placeholder="Ex: Viaxe Portugal">
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Data inicio</label>
-                            <input type="date" class="form-input" id="travelStart">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Data fin</label>
-                            <input type="date" class="form-input" id="travelEnd">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Orzamento total (€)</label>
-                        <input type="number" class="form-input" id="travelBudget" placeholder="Ex: 300" step="0.01"
-                            inputmode="decimal">
-                    </div>
-                    <button class="btn btn-primary"
-                        style="width:100%;background:linear-gradient(135deg,var(--accent-cyan),var(--accent-purple));"
-                        onclick="startTravelMode()">✈️ Iniciar Modo Viaxe</button>
-                </div>
-            </div>
+
             <div class="card">
                 <div class="card-header" style="cursor:pointer;"
                     onclick="toggleCollapsible('catsCollapsible', 'catsChevron')">
@@ -1773,6 +1883,19 @@
                         <div id="recurringCatList"></div>
                     </div>
                 </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">⏱️ Custo en Horas de Traballo</h2>
+                </div>
+                <p style="color:var(--text-muted);margin-bottom:12px;font-size:0.8rem;">Introduce a túa tarifa por hora
+                    para ver canto traballo custa cada gasto.</p>
+                <div class="form-group">
+                    <label class="form-label">Tarifa por hora (€/h)</label>
+                    <input type="number" class="form-input" id="hourlyRateInput" placeholder="Ex: 12.50" step="0.01"
+                        inputmode="decimal">
+                </div>
+                <button class="btn btn-primary" style="width:100%;" id="btnSaveHourlyRate">Gardar tarifa</button>
             </div>
             <div class="card">
                 <div class="card-header">
@@ -1825,37 +1948,7 @@
                 <button class="btn btn-primary" id="btnRequestPush" style="width:100%;">Activar notificacións</button>
                 <p id="pushStatus" style="margin-top:10px;font-size:0.8rem;color:var(--text-muted);"></p>
             </div>
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title">📚 Historial de Períodos</h2>
-                    <div style="display:flex;gap:8px;">
-                        <button class="btn btn-secondary" id="btnSelectPeriods"
-                            style="padding:6px 10px;font-size:0.75rem;min-height:36px;">☑ Seleccionar</button>
-                        <button class="btn btn-primary" id="btnExportSelected"
-                            style="padding:6px 10px;font-size:0.75rem;min-height:36px;display:none;">💾
-                            Exportar</button>
-                    </div>
-                </div>
-                <div id="periodHistoryList">
-                    <div class="empty-state">
-                        <div class="empty-state-icon">📚</div>
-                        <p>Sen períodos pechados</p>
-                    </div>
-                </div>
-            </div>
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title">💾 Datos</h2>
-                </div>
-                <div class="btn-group">
-                    <button class="btn btn-primary" id="btnExportJSON">JSON</button>
-                    <button class="btn btn-secondary" id="btnExportCSV">CSV</button>
-                    <button class="btn btn-secondary" id="btnExportPDF">PDF</button>
-                    <button class="btn btn-secondary" id="btnImport">Importar</button>
-                    <input type="file" id="importFile" accept=".json" style="display:none;">
-                    <button class="btn btn-danger" id="btnReset">Borrar</button>
-                </div>
-            </div>
+
             <div class="card">
                 <div class="card-header">
                     <h2 class="card-title">⚙️ Estado</h2>
@@ -1977,6 +2070,12 @@
                         <option value="subscricions">📱 Subscricións</option>
                         <option value="outros">📦 Outros</option>
                     </select></div>
+                <div class="form-group">
+                    <label class="form-label">📍 Ubicación / Ruta (opcional)</label>
+                    <input type="text" class="form-input" name="location" placeholder="Ex: Santiago, Ruta Norte..."
+                        list="locationSuggestions">
+                    <datalist id="locationSuggestions"></datalist>
+                </div>
                 <button type="submit" class="btn btn-primary" style="width: 100%;">Gardar</button>
             </form>
         </div>
@@ -3056,9 +3155,9 @@
         })();
         // DATABASE
         const Database = (function () {
-            const DB_NAME = 'dinheiroDB', DB_VERSION = 7;
+            const DB_NAME = 'dinheiroDB', DB_VERSION = 8;
             let db = null;
-            const STORES = ['accounts', 'incomes', 'expenses', 'recurringExpenses', 'savingsGoals', 'debts', 'transfers', 'notifications', 'calendarEvents', 'appConfig', 'periodHistory'];
+            const STORES = ['accounts', 'incomes', 'expenses', 'recurringExpenses', 'savingsGoals', 'debts', 'transfers', 'notifications', 'calendarEvents', 'appConfig', 'periodHistory', 'priceHistory'];
             function open() {
                 return new Promise((resolve, reject) => {
                     const req = indexedDB.open(DB_NAME, DB_VERSION);
@@ -3089,6 +3188,12 @@
                                     d.createObjectStore('periodHistory', { keyPath: 'id', autoIncrement: true });
                                 }
                                 console.log('Migración v7: store periodHistory creado');
+                            }
+                            if (oldVersion < 8) {
+                                if (!d.objectStoreNames.contains('priceHistory')) {
+                                    d.createObjectStore('priceHistory', { keyPath: 'id', autoIncrement: true });
+                                }
+                                console.log('Migración v8: store priceHistory creado');
                             }
                         } catch (err) {
                             console.error('Erro crítico na migración:', err);
@@ -3149,7 +3254,8 @@
             frequentExpenses: [],
             searchQuery: '',
             pushNotificationsEnabled: false,
-            travelMode: { active: false, name: '', budget: 0, startDate: null, endDate: null, dailyBudget: 0 }
+            travelMode: { active: false, name: '', budget: 0, startDate: null, endDate: null, dailyBudget: 0 },
+            hourlyRate: 0
         };
         let charts = { weekly: null, cashflow: null, realvsproject: null, periods: null, accounts: null, comparison: null, category: null, simulator: null, dashboard: null };        // CATEGORÍAS EDITABLES
         const DEFAULT_EXPENSE_CATS = [
@@ -3451,6 +3557,9 @@
                 f.editId.value = '';
                 $('expenseModal').querySelector('.modal-title').textContent = 'Novo Gasto';
                 setTimeout(() => initVoiceExpense(), 100);
+                const locations = [...new Set(AppState.expenses.filter(e => e.location).map(e => e.location))];
+                const dl = $('locationSuggestions');
+                if (dl) dl.innerHTML = locations.map(l => `<option value="${escapeHtml(l)}">`).join('');
             }
             updateAccountSelects();
             document.querySelectorAll(`#${id} input[type="date"]`).forEach(i => { if (!i.value) i.value = new Date().toISOString().split('T')[0]; });
@@ -3495,11 +3604,16 @@
                 case 'calendar':
                     updateCalendar();
                     break;
+                case 'tools':
+                    updateSimulator();
+                    updatePeriodHistory();
+                    updateTravelModeUI();
+                    updateProductHistoryList();
+                    break;
                 case 'settings':
                     updateCategorySettingsUI();
                     updateCategorySelects();
                     updateSystemStatus();
-                    updatePeriodHistory();
                     break;
             }
 
@@ -3767,7 +3881,7 @@
                         resultsList.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🛒</div><p>' + (AppState.searchQuery ? 'Sen resultados' : 'Rexistra gastos') + '</p></div>';
                         return;
                     }
-                    resultsList.innerHTML = filtered.map(e => `<div class="list-item"><div class="list-item-info"><div class="list-item-name">${escapeHtml(e.description)}</div><div class="list-item-details">${fd(e.date)} · ${cats[e.category] || '📦'}</div></div><div class="list-item-amount expense">-${fc(e.amount)}</div><div class="list-item-actions"><button class="btn btn-secondary btn-icon" onclick="editExpense(${e.id})">✎</button>
+                    resultsList.innerHTML = filtered.map(e => `<div class="list-item" data-expense-id="${e.id}" style="${e.extraordinary ? 'opacity:0.7;border-left-color:var(--accent-purple);' : ''}"><div class="list-item-info"><div class="list-item-name">${escapeHtml(e.description)}${e.extraordinary ? ' <span style="font-size:0.7rem;color:var(--accent-purple);background:rgba(168,85,247,0.1);padding:1px 6px;border-radius:10px;">⭐ Extraordinario</span>' : ''}</div> <div class="list-item-details">${fd(e.date)} · ${cats[e.category] || '📦'}${e.location ? ' · 📍 ' + escapeHtml(e.location) : ''}${formatWorkTime(e.amount)}</div></div><div class="list-item-amount expense">-${fc(e.amount)}</div><div class="list-item-actions"><button class="btn btn-secondary btn-icon" onclick="editExpense(${e.id})">✎</button>
 <button class="btn btn-danger btn-icon" data-delete="expense" data-id="${e.id}">✕</button></div></div>`).join('');
                 });
             }
@@ -3779,7 +3893,7 @@
                 resultsList.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🛒</div><p>' + (AppState.searchQuery ? 'Sen resultados' : 'Rexistra gastos') + '</p></div>';
                 return;
             }
-            resultsList.innerHTML = items.map(e => `<div class="list-item"><div class="list-item-info"><div class="list-item-name">${escapeHtml(e.description)}</div><div class="list-item-details">${fd(e.date)} · ${cats[e.category] || '📦'}</div></div><div class="list-item-amount expense">-${fc(e.amount)}</div><div class="list-item-actions"><button class="btn btn-secondary btn-icon" onclick="editExpense(${e.id})">✎</button>
+            resultsList.innerHTML = items.map(e => `<div class="list-item" data-expense-id="${e.id}" style="${e.extraordinary ? 'opacity:0.7;border-left-color:var(--accent-purple);' : ''}"><div class="list-item-info"><div class="list-item-name">${escapeHtml(e.description)}${e.extraordinary ? ' <span style="font-size:0.7rem;color:var(--accent-purple);background:rgba(168,85,247,0.1);padding:1px 6px;border-radius:10px;">⭐ Extraordinario</span>' : ''}</div> <div class="list-item-details">${fd(e.date)} · ${cats[e.category] || '📦'}${e.location ? ' · 📍 ' + escapeHtml(e.location) : ''}${formatWorkTime(e.amount)}</div></div><div class="list-item-amount expense">-${fc(e.amount)}</div><div class="list-item-actions"><button class="btn btn-secondary btn-icon" onclick="editExpense(${e.id})">✎</button>
 <button class="btn btn-danger btn-icon" data-delete="expense" data-id="${e.id}">✕</button></div></div>`).join('');
         }
 
@@ -3816,6 +3930,62 @@
             </div>
         </div>`;
             }).join('');
+        }
+
+        function showExpenseContextMenu(id, target) {
+            const e = AppState.expenses.find(x => x.id === id); if (!e) return;
+            const existing = document.getElementById('expenseContextMenu');
+            if (existing) existing.remove();
+            const menu = document.createElement('div');
+            menu.id = 'expenseContextMenu';
+            menu.style.cssText = `position:fixed;z-index:9999;background:var(--bg-tertiary);border:1px solid var(--border-glow);border-radius:12px;padding:8px;min-width:220px;box-shadow:var(--shadow-neon);`;
+            const rect = target.getBoundingClientRect();
+            menu.style.top = `${Math.min(rect.bottom + 8, window.innerHeight - 150)}px`;
+            menu.style.left = `${Math.min(rect.left, window.innerWidth - 240)}px`;
+            menu.innerHTML = `
+                <div style="font-family:'Orbitron',monospace;font-size:0.7rem;color:var(--accent-cyan);padding:6px 10px;border-bottom:1px solid rgba(255,110,199,0.2);margin-bottom:6px;">${escapeHtml(e.description)}</div>
+                <button class="btn btn-secondary" style="width:100%;margin-bottom:6px;text-align:left;" onclick="toggleExtraordinary(${id})">
+                    ${e.extraordinary ? '⭐ Quitar extraordinario' : '⭐ Marcar como extraordinario'}
+                </button>
+                <button class="btn btn-secondary" style="width:100%;text-align:left;color:#ff4757;" onclick="document.getElementById('expenseContextMenu').remove()">
+                    ✕ Cancelar
+                </button>`;
+            document.body.appendChild(menu);
+            setTimeout(() => document.addEventListener('touchstart', function removeMenu(ev) {
+                if (!menu.contains(ev.target)) { menu.remove(); document.removeEventListener('touchstart', removeMenu); }
+            }, { passive: true }), 100);
+        }
+
+        async function toggleExtraordinary(id) {
+            const e = AppState.expenses.find(x => x.id === id); if (!e) return;
+            e.extraordinary = !e.extraordinary;
+            await Database.update('expenses', e);
+            AppState.expenses = AppState.expenses.map(x => x.id === id ? e : x);
+            document.getElementById('expenseContextMenu')?.remove();
+            updateAllUI();
+            toast(e.extraordinary ? '⭐ Marcado como extraordinario — non afectará ás medias' : 'Gasto restaurado á normalidade');
+        }
+
+        async function togglePauseSavings(id) {
+            const g = AppState.savingsGoals.find(x => x.id === id); if (!g) return;
+            g.paused = !g.paused;
+            if (!g.paused) {
+                // Reanudar — recalcular dailyAmount
+                const today = getEffectiveDate(); today.setHours(0, 0, 0, 0);
+                if (g.targetDate) {
+                    const target = new Date(g.targetDate); target.setHours(0, 0, 0, 0);
+                    const daysLeft = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
+                    const remaining = (g.targetAmount || 0) - (g.currentAmount || 0);
+                    g.dailyAmount = daysLeft > 0 ? r2(remaining / daysLeft) : 0;
+                }
+                toast(`▶ Meta "${escapeHtml(g.name)}" reanudada · ${fc(g.dailyAmount)}/día`);
+            } else {
+                g.dailyAmount = 0;
+                toast(`⏸ Meta "${escapeHtml(g.name)}" pausada · voltou ao dispoñible diario`);
+            }
+            await Database.update('savingsGoals', g);
+            AppState.savingsGoals = AppState.savingsGoals.map(x => x.id === id ? g : x);
+            updateAllUI();
         }
 
         async function markSavingsCompleted(id) {
@@ -4009,10 +4179,11 @@
                 const isExpired = g.targetDate && new Date(g.targetDate) < today && !isCompleted;
                 const borderColor = isCompleted ? 'var(--accent-green)' : isExpired ? '#ff4757' : 'var(--accent-purple)';
                 const completedBadge = isCompleted ? '<span style="font-size:0.7rem;background:rgba(57,255,20,0.2);color:var(--accent-green);padding:2px 6px;border-radius:4px;margin-left:6px;">✅ Completada</span>' : '';
+                const pausedBadge = g.paused && !isCompleted ? '<span style="font-size:0.7rem;background:rgba(255,217,61,0.2);color:var(--accent-yellow);padding:2px 6px;border-radius:4px;margin-left:6px;">⏸ Pausada</span>' : '';
                 return `<div class="list-item" style="flex-direction:column;align-items:stretch;border-left-color:${borderColor}">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
                 <div class="list-item-info">
-                    <div class="list-item-name">${escapeHtml(g.name)}${completedBadge}</div>
+                    <div class="list-item-name">${escapeHtml(g.name)}${completedBadge}${pausedBadge}</div>
                     <div class="list-item-details">${isCompleted ? 'Meta completada' : `${fc(g.dailyAmount)}/día · ~${dr} días`}</div>
                 </div>
                 <div style="text-align:right;margin-right:8px;">
@@ -4023,6 +4194,7 @@
                     ${!isCompleted ? `
     <button class="btn btn-secondary btn-icon" onclick="openAddSavingsAmount(${g.id})" title="Engadir aportación">+</button>
     <button class="btn btn-secondary btn-icon" onclick="openSubtractSavingsAmount(${g.id})" title="Retirar aportación">−</button>
+    <button class="btn btn-secondary btn-icon" onclick="togglePauseSavings(${g.id})" title="${g.paused ? 'Reanudar meta' : 'Pausar meta'}" style="color:${g.paused ? 'var(--accent-green)' : 'var(--accent-yellow)'};">${g.paused ? '▶' : '⏸'}</button>
 ` : ''}
                     <button class="btn btn-danger btn-icon" data-delete="savings" data-id="${g.id}">✕</button>
                 </div>
@@ -4238,11 +4410,212 @@
             updateWeeklyChart();
             updateCashflowChart();
             updateRealVsProjectChart();
+            updateRule502030();
             updateComparisonChart();
             updateAccountsChart();
             updateCategoryChart();
             updatePeriodsChart();
             updateTrafficLight();
+            updateHealthScore();
+
+        }
+
+        async function loadPriceHistory() {
+            AppState.priceHistory = await Database.getAll('priceHistory');
+            updateProductHistoryList();
+        }
+
+        async function addProductPrice() {
+            const name = $('productName').value.trim();
+            const price = parseFloat($('productPrice').value) || 0;
+            if (!name) { toast('Introduce o nome do produto', 'error'); return; }
+            if (price <= 0) { toast('Introduce un prezo válido', 'error'); return; }
+            const entry = { name, price, date: new Date().toISOString().split('T')[0] };
+            const id = await Database.add('priceHistory', entry);
+            if (!AppState.priceHistory) AppState.priceHistory = [];
+            AppState.priceHistory.push({ ...entry, id });
+            $('productPrice').value = '';
+            updateProductHistoryList();
+            toast(`📦 ${name}: ${fc(price)} rexistrado ✓`);
+        }
+
+        function updateProductHistoryList() {
+            const el = $('productHistoryList'); if (!el) return;
+            const history = AppState.priceHistory || [];
+            if (!history.length) { el.innerHTML = '<div style="color:var(--text-muted);font-size:0.8rem;text-align:center;padding:10px;">Sen produtos rexistrados</div>'; return; }
+            const byProduct = {};
+            history.forEach(h => {
+                if (!byProduct[h.name]) byProduct[h.name] = [];
+                byProduct[h.name].push(h);
+            });
+            el.innerHTML = Object.entries(byProduct).map(([name, entries]) => {
+                const sorted = [...entries].sort((a, b) => new Date(b.date) - new Date(a.date));
+                const latest = sorted[0];
+                const previous = sorted[1];
+                const trend = previous ? latest.price - previous.price : 0;
+                const trendIcon = trend > 0 ? '📈' : trend < 0 ? '📉' : '➡️';
+                const trendColor = trend > 0 ? '#ff4757' : trend < 0 ? '#39ff14' : 'var(--text-muted)';
+                return `<div style="padding:10px 0;border-bottom:1px solid rgba(255,110,199,0.1);">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <div>
+                            <div style="font-size:0.85rem;color:var(--text-primary);">${escapeHtml(name)}</div>
+                            <div style="font-size:0.72rem;color:var(--text-muted);">${fd(latest.date)} · ${sorted.length} rexistro(s)</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-family:'Orbitron',monospace;font-size:0.9rem;color:var(--accent-cyan);">${fc(latest.price)}</div>
+                            ${previous ? `<div style="font-size:0.72rem;color:${trendColor};">${trendIcon} ${trend > 0 ? '+' : ''}${fc(trend)} vs anterior</div>` : ''}
+                        </div>
+                    </div>
+                    ${sorted.length > 1 ? `<div style="margin-top:6px;font-size:0.7rem;color:var(--text-muted);">Historial: ${sorted.map(e => `${fd(e.date)}: ${fc(e.price)}`).join(' → ')}</div>` : ''}
+                </div>`;
+            }).join('');
+        }
+
+        function updateHealthScore() {
+            const el = $('healthScoreDisplay'); if (!el) return;
+            const r = FinancialEngine.calculateAvailableToday(AppState);
+            const pInfo = r?.periodInfo;
+            if (!pInfo) { el.innerHTML = '<div style="color:var(--text-muted);">Sen datos suficientes</div>'; return; }
+
+            // FACTOR 1 (40%): ¿Chegas a fin de período?
+            let factor1 = 0;
+            const projection = r.projectedClose ?? r.availableToday;
+            if (projection > 50) factor1 = 100;
+            else if (projection > 0) factor1 = 70;
+            else if (projection > -50) factor1 = 30;
+            else factor1 = 0;
+
+            // FACTOR 2 (30%): ¿Estás aforrando?
+            let factor2 = 0;
+            const activeGoals = AppState.savingsGoals.filter(g => g.active !== false && !g.paused && !g.completed);
+            const totalDailyTarget = activeGoals.reduce((s, g) => s + (parseFloat(g.dailyAmount) || 0), 0);
+            const periodIncomes = AppState.incomes
+                .filter(i => { if (!i || !i.date) return false; const d = new Date(i.date); d.setHours(0, 0, 0, 0); return d >= pInfo.periodStart && d <= pInfo.periodEnd; })
+                .reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
+            if (periodIncomes > 0) {
+                const savingsRate = (totalDailyTarget * pInfo.totalDays) / periodIncomes;
+                if (savingsRate >= 0.2) factor2 = 100;
+                else if (savingsRate >= 0.1) factor2 = 70;
+                else if (savingsRate > 0) factor2 = 40;
+                else factor2 = 0;
+            }
+
+            // FACTOR 3 (15%): ¿Controlas os fixos?
+            let factor3 = 0;
+            const totalFixed = AppState.recurringExpenses.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
+            if (periodIncomes > 0) {
+                const fixedRatio = totalFixed / periodIncomes;
+                if (fixedRatio <= 0.4) factor3 = 100;
+                else if (fixedRatio <= 0.6) factor3 = 60;
+                else if (fixedRatio <= 0.8) factor3 = 30;
+                else factor3 = 0;
+            } else factor3 = 50;
+
+            // FACTOR 4 (15%): ¿Semáforo baixo control?
+            let factor4 = 100;
+            const now2 = getEffectiveDate();
+            const cm = now2.getMonth(), cy = now2.getFullYear();
+            const currentByCat = {};
+            AppState.expenses.forEach(e => {
+                if (!e || !e.date || e.extraordinary) return;
+                const d = new Date(e.date);
+                if (d.getMonth() === cm && d.getFullYear() === cy)
+                    currentByCat[e.category] = (currentByCat[e.category] || 0) + (parseFloat(e.amount) || 0);
+            });
+            const redCats = Object.keys(currentByCat).filter(cat => {
+                const history = [];
+                for (let i = 1; i <= 6; i++) {
+                    const m = new Date(cy, cm - i, 1), mEnd = new Date(cy, cm - i + 1, 0);
+                    const total = AppState.expenses.filter(e => { if (!e || !e.date || e.extraordinary) return false; const d = new Date(e.date); d.setHours(0, 0, 0, 0); return d >= m && d <= mEnd && e.category === cat; }).reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+                    if (total > 0) history.push(total);
+                }
+                if (!history.length) return false;
+                const avg = history.reduce((s, v) => s + v, 0) / history.length;
+                return avg > 0 && currentByCat[cat] / avg > 1.1;
+            });
+            if (redCats.length >= 3) factor4 = 0;
+            else if (redCats.length === 2) factor4 = 40;
+            else if (redCats.length === 1) factor4 = 70;
+
+            // SCORE FINAL
+            const score = Math.round(factor1 * 0.4 + factor2 * 0.3 + factor3 * 0.15 + factor4 * 0.15);
+            let color, emoji, label;
+            if (score >= 80) { color = '#39ff14'; emoji = '💚'; label = 'Saúde Excelente'; }
+            else if (score >= 60) { color = '#ffd93d'; emoji = '💛'; label = 'Saúde Boa'; }
+            else if (score >= 40) { color = '#ff9f43'; emoji = '🧡'; label = 'Atención Necesaria'; }
+            else { color = '#ff4757'; emoji = '❤️'; label = 'Situación Crítica'; }
+
+            el.innerHTML = `
+                <div style="font-size:4rem;line-height:1;">${emoji}</div>
+                <div style="font-family:'Orbitron',monospace;font-size:3rem;font-weight:800;color:${color};margin:10px 0;">${score}</div>
+                <div style="font-family:'Orbitron',monospace;font-size:0.8rem;color:${color};margin-bottom:20px;">${label}</div>
+                <div style="background:rgba(255,255,255,0.08);border-radius:20px;height:12px;overflow:hidden;margin:0 20px 20px;">
+                    <div style="height:100%;width:${score}%;background:${color};border-radius:20px;transition:width 1s ease;"></div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:left;font-size:0.75rem;color:var(--text-muted);">
+                    <div>🎯 Chegar a fin: <strong style="color:${factor1 >= 70 ? 'var(--accent-green)' : '#ff4757'}">${factor1}%</strong></div>
+                    <div>💰 Aforro: <strong style="color:${factor2 >= 70 ? 'var(--accent-green)' : '#ff4757'}">${factor2}%</strong></div>
+                    <div>🔄 Fixos: <strong style="color:${factor3 >= 70 ? 'var(--accent-green)' : '#ff4757'}">${factor3}%</strong></div>
+                    <div>🚦 Semáforo: <strong style="color:${factor4 >= 70 ? 'var(--accent-green)' : '#ff4757'}">${factor4}%</strong></div>
+                </div>`;
+        }
+
+        function formatWorkTime(amount) {
+            if (!AppState.hourlyRate || AppState.hourlyRate <= 0) return '';
+            const hours = amount / AppState.hourlyRate;
+            if (hours >= 1) return ` · ⏱️ ${hours.toFixed(1)}h traballo`;
+            const minutes = Math.round(hours * 60);
+            return ` · ⏱️ ${minutes}min traballo`;
+        }
+
+        function updateRule502030() {
+            const el = $('rule502030'); if (!el) return;
+            const r = FinancialEngine.calculateAvailableToday(AppState);
+            const pInfo = r?.periodInfo; if (!pInfo) return;
+            const { periodStart, periodEnd } = pInfo;
+            const periodIncomes = AppState.incomes
+                .filter(i => { if (!i || !i.date) return false; const d = new Date(i.date); d.setHours(0, 0, 0, 0); return d >= periodStart && d <= periodEnd; })
+                .reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
+            if (periodIncomes <= 0) { el.innerHTML = '<div style="color:var(--text-muted);font-size:0.8rem;text-align:center;padding:10px;">Sen ingresos rexistrados neste período</div>'; return; }
+            const needsCats = ['alimentacion', 'vivienda', 'transporte', 'saude', 'servicios', 'seguros'];
+            const wantsCats = ['ocio', 'roupa', 'cafe', 'subscricions', 'outros'];
+            const periodExpenses = AppState.expenses.filter(e => {
+                if (!e || !e.date || e.extraordinary) return false;
+                const d = new Date(e.date); d.setHours(0, 0, 0, 0);
+                return d >= periodStart && d <= periodEnd;
+            });
+            const needs = periodExpenses.filter(e => needsCats.includes(e.category)).reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+            const wants = periodExpenses.filter(e => wantsCats.includes(e.category)).reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+            const savings = AppState.savingsGoals.filter(g => g.active !== false && !g.paused && !g.completed).reduce((s, g) => s + (parseFloat(g.dailyAmount) || 0), 0) * pInfo.totalDays;
+            const idealNeeds = r2(periodIncomes * 0.5);
+            const idealWants = r2(periodIncomes * 0.3);
+            const idealSavings = r2(periodIncomes * 0.2);
+            const rows = [
+                { label: '🏠 Necesidades', real: needs, ideal: idealNeeds, pct: periodIncomes > 0 ? (needs / periodIncomes * 100) : 0, target: 50 },
+                { label: '🎮 Desexos', real: wants, ideal: idealWants, pct: periodIncomes > 0 ? (wants / periodIncomes * 100) : 0, target: 30 },
+                { label: '💰 Aforro', real: savings, ideal: idealSavings, pct: periodIncomes > 0 ? (savings / periodIncomes * 100) : 0, target: 20 }
+            ];
+            el.innerHTML = `
+                <div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:12px;text-align:center;">Ingresos do período: <strong style="color:var(--accent-green)">${fc(periodIncomes)}</strong> · Orientativo</div>
+                ${rows.map(row => {
+                const over = row.pct > row.target + 10;
+                const under = row.pct < row.target - 10;
+                const color = over ? '#ff4757' : under ? 'var(--accent-cyan)' : 'var(--accent-green)';
+                const emoji = over ? '🔴' : under ? '🔵' : '🟢';
+                return `<div style="margin-bottom:14px;">
+                        <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:0.83rem;">
+                            <span>${row.label}</span>
+                            <span style="font-family:'Orbitron',monospace;color:${color};">${row.pct.toFixed(0)}% ${emoji} <span style="color:var(--text-muted);font-size:0.7rem;">/ obx. ${row.target}%</span></span>
+                        </div>
+                        <div style="background:rgba(255,255,255,0.08);border-radius:20px;height:8px;overflow:hidden;">
+                            <div style="height:100%;width:${Math.min(row.pct / row.target * 100, 100)}%;background:${color};border-radius:20px;transition:width 0.5s;"></div>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:var(--text-muted);margin-top:2px;">
+                            <span>${fc(row.real)} real</span>
+                            <span>obx. ${fc(row.ideal)}</span>
+                        </div>
+                    </div>`;
+            }).join('')}`;
         }
 
         function updateTrafficLight() {
@@ -4254,7 +4627,7 @@
                 const m = new Date(cy, cm - i, 1);
                 const mEnd = new Date(cy, cm - i + 1, 0);
                 AppState.expenses.forEach(e => {
-                    if (!e || !e.date) return;
+                    if (!e || !e.date || e.extraordinary) return;
                     const d = new Date(e.date); d.setHours(0, 0, 0, 0);
                     if (d >= m && d <= mEnd) {
                         if (!historyByCat[e.category]) historyByCat[e.category] = [];
@@ -4265,7 +4638,7 @@
             // Calcular gasto actual del mes
             const currentByCat = {};
             AppState.expenses.forEach(e => {
-                if (!e || !e.date) return;
+                if (!e || !e.date || e.extraordinary) return;
                 const d = new Date(e.date);
                 if (d.getMonth() === cm && d.getFullYear() === cy) {
                     currentByCat[e.category] = (currentByCat[e.category] || 0) + (parseFloat(e.amount) || 0);
@@ -4769,7 +5142,7 @@
                 const f = e.target;
                 const editId = f.editId.value ? parseInt(f.editId.value) : null;
                 const accountId = parseInt(f.accountId.value);
-                const data = { description: f.description.value, amount: parseFloat(f.amount.value) || 0, date: f.date.value, category: f.category.value, accountId: accountId };
+                const data = { description: f.description.value, amount: parseFloat(f.amount.value) || 0, date: f.date.value, category: f.category.value, accountId: accountId, location: f.location?.value?.trim() || '' };
                 if (data.amount <= 0) { toast('O importe debe ser maior que 0', 'error'); isProcessing = false; return; }
                 const _maxDateExp = new Date(); _maxDateExp.setFullYear(_maxDateExp.getFullYear() + 1);
                 if (new Date(data.date) > _maxDateExp) { toast('A data non pode ser máis dun ano no futuro', 'error'); isProcessing = false; return; }
@@ -5441,6 +5814,60 @@
             const pe = p.periodEnd.toLocaleDateString('gl-ES');
             el.innerHTML = `Período actual: <strong>${ps} → ${pe}</strong> · Día ${p.dayInPeriod} de ${p.totalDays}`;
         }
+        // me lo puedo permitir?
+        function checkCanAfford() {
+            const amount = parseFloat($('affordAmount').value) || 0;
+            if (amount <= 0) { toast('Introduce un importe válido', 'error'); return; }
+            const r = FinancialEngine.calculateAvailableToday(AppState);
+            const availableToday = r?.availableToday || 0;
+            const availableWithoutSavings = r?.availableWithoutSavings || 0;
+            const dailyAvailable = r?.breakdown?.availablePerDay || 0;
+            const remainingDays = r?.periodInfo?.remainingDays || 1;
+            const totalAvailable = dailyAvailable * remainingDays;
+            const daysConsumed = dailyAvailable > 0 ? amount / dailyAvailable : 0;
+            const canAffordToday = amount <= availableToday;
+            const canAffordPeriod = amount <= totalAvailable;
+            const canAffordWithoutSavings = amount <= availableWithoutSavings;
+            // Impacto en metas
+            const goalsAtRisk = AppState.savingsGoals.filter(g => {
+                if (!g || g.active === false || g.paused || g.completed) return false;
+                const today = getEffectiveDate();
+                const target = new Date(g.targetDate);
+                const daysLeft = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
+                const remaining = g.targetAmount - (g.currentAmount || 0);
+                const newDailyNeeded = daysLeft > 0 ? (remaining + amount) / daysLeft : 0;
+                return newDailyNeeded > (g.dailyAmount || 0) * 1.2;
+            });
+            let icon, color, verdict;
+            if (canAffordToday) { icon = '✅'; color = 'var(--accent-green)'; verdict = 'Podes permitircho hoxe sen problema'; }
+            else if (canAffordWithoutSavings) { icon = '🟡'; color = 'var(--accent-yellow)'; verdict = 'Podes, pero tocarías o teu aforro diario'; }
+            else if (canAffordPeriod) { icon = '🟠'; color = 'var(--accent-orange)'; verdict = 'Podes, pero afectaría aos próximos días'; }
+            else { icon = '🔴'; color = '#ff4757'; verdict = 'Non é recomendable agora mesmo'; }
+            $('affordResult').style.display = 'block';
+            $('affordResult').innerHTML = `
+                <div style="text-align:center;margin-bottom:12px;">
+                    <div style="font-size:2rem;">${icon}</div>
+                    <div style="font-family:'Orbitron',monospace;font-size:0.9rem;color:${color};margin-top:6px;">${verdict}</div>
+                </div>
+                <div style="display:grid;gap:8px;">
+                    <div style="display:flex;justify-content:space-between;font-size:0.85rem;">
+                        <span style="color:var(--text-secondary);">Dispoñible hoxe</span>
+                        <span style="color:${canAffordToday ? 'var(--accent-green)' : '#ff4757'};font-family:'Orbitron',monospace;">${fc(availableToday)}</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.85rem;">
+                        <span style="color:var(--text-secondary);">Días de dispoñible que consume</span>
+                        <span style="font-family:'Orbitron',monospace;color:var(--accent-cyan);">${daysConsumed.toFixed(1)} días</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.85rem;">
+                        <span style="color:var(--text-secondary);">Dispoñible resto do período</span>
+                        <span style="font-family:'Orbitron',monospace;color:${canAffordPeriod ? 'var(--accent-green)' : '#ff4757'};">${fc(totalAvailable)}</span>
+                    </div>
+                    ${goalsAtRisk.length ? `
+                    <div style="margin-top:6px;padding:8px;background:rgba(255,71,87,0.1);border-radius:8px;font-size:0.8rem;color:#ff4757;">
+                        ⚠️ Metas en risco: ${goalsAtRisk.map(g => escapeHtml(g.name)).join(', ')}
+                    </div>` : ''}
+                </div>`;
+        }
 
         //Modo Viaxe
 
@@ -5452,13 +5879,81 @@
             if (!name) { toast('Introduce o nome da viaxe', 'error'); return; }
             if (!start || !end) { toast('Introduce as datas', 'error'); return; }
             if (new Date(end) <= new Date(start)) { toast('A data fin debe ser posterior ao inicio', 'error'); return; }
-            if (budget <= 0) { toast('Introduce un orzamento válido', 'error'); return; }
             const days = Math.ceil((new Date(end) - new Date(start)) / (1000 * 60 * 60 * 24)) + 1;
             const dailyBudget = r2(budget / days);
-            AppState.travelMode = { active: true, name, budget, startDate: start, endDate: end, dailyBudget };
+            const participantsRaw = $('travelParticipants').value.trim();
+            const participants = participantsRaw ? participantsRaw.split(',').map(p => p.trim()).filter(p => p) : ['Ti'];
+            AppState.travelMode = { active: true, name, budget, startDate: start, endDate: end, dailyBudget, participants, payments: [] };
             saveAppConfig();
             updateTravelModeUI();
             toast(`✈️ Modo Viaxe "${name}" activado! ${fc(dailyBudget)}/día`);
+        }
+
+         function addTravelPayment() {
+            const payer = $('travelPayer')?.value;
+            const amount = parseFloat($('travelPayAmount')?.value) || 0;
+            const concept = $('travelPayConcept')?.value?.trim() || 'Pago';
+            if (!payer) { toast('Selecciona quen pagou', 'error'); return; }
+            if (amount <= 0) { toast('Introduce un importe válido', 'error'); return; }
+            if (!AppState.travelMode.payments) AppState.travelMode.payments = [];
+            AppState.travelMode.payments.push({ payer, amount, concept, date: new Date().toISOString().split('T')[0] });
+            $('travelPayAmount').value = '';
+            $('travelPayConcept').value = '';
+            saveAppConfig();
+            updateTravelSplit();
+            toast(`💸 ${payer} pagou ${fc(amount)} ✓`);
+        }
+
+        function updateTravelSplit() {
+            const el = $('travelSplitResult'); if (!el) return;
+            const tm = AppState.travelMode;
+            if (!tm?.active || !tm.participants?.length) return;
+            const payments = tm.payments || [];
+            if (!payments.length) { el.innerHTML = ''; return; }
+            const n = tm.participants.length;
+            const totalPaid = payments.reduce((s, p) => s + p.amount, 0);
+            const perPerson = r2(totalPaid / n);
+            // Canto pagou cada un
+            const paid = {};
+            tm.participants.forEach(p => paid[p] = 0);
+            payments.forEach(p => { paid[p.payer] = (paid[p.payer] || 0) + p.amount; });
+            // Balance de cada un (positivo = pagou de máis, negativo = debe)
+            const balances = {};
+            tm.participants.forEach(p => { balances[p] = r2((paid[p] || 0) - perPerson); });
+            // Calcular transferencias mínimas
+            const creditors = tm.participants.filter(p => balances[p] > 0).map(p => ({ name: p, amount: balances[p] }));
+            const debtors = tm.participants.filter(p => balances[p] < 0).map(p => ({ name: p, amount: -balances[p] }));
+            const transfers = [];
+            let i = 0, j = 0;
+            while (i < debtors.length && j < creditors.length) {
+                const amount = Math.min(debtors[i].amount, creditors[j].amount);
+                if (amount > 0.01) transfers.push({ from: debtors[i].name, to: creditors[j].name, amount: r2(amount) });
+                debtors[i].amount -= amount;
+                creditors[j].amount -= amount;
+                if (debtors[i].amount < 0.01) i++;
+                if (creditors[j].amount < 0.01) j++;
+            }
+            el.innerHTML = `
+                <div style="font-family:'Orbitron',monospace;font-size:0.7rem;color:var(--accent-cyan);margin-bottom:8px;text-transform:uppercase;">Balance actual</div>
+                <div style="margin-bottom:10px;">
+                    ${tm.participants.map(p => `
+                    <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:0.82rem;">
+                        <span>${escapeHtml(p)}</span>
+                        <span style="font-family:'Orbitron',monospace;color:${balances[p] >= 0 ? 'var(--accent-green)' : '#ff4757'};">
+                            ${balances[p] >= 0 ? '+' : ''}${fc(balances[p])}
+                        </span>
+                    </div>`).join('')}
+                </div>
+                ${transfers.length ? `
+                <div style="font-family:'Orbitron',monospace;font-size:0.7rem;color:var(--accent-pink);margin-bottom:6px;text-transform:uppercase;">Liquidación</div>
+                ${transfers.map(t => `
+                <div style="padding:6px 8px;background:rgba(255,110,199,0.1);border-radius:8px;margin-bottom:4px;font-size:0.82rem;">
+                    <strong>${escapeHtml(t.from)}</strong> → <strong>${escapeHtml(t.to)}</strong>: <span style="color:var(--accent-cyan);font-family:'Orbitron',monospace;">${fc(t.amount)}</span>
+                </div>`).join('')}` : '<div style="font-size:0.8rem;color:var(--accent-green);text-align:center;">✅ Todo equilibrado!</div>'}
+                <div style="font-size:0.72rem;color:var(--text-muted);margin-top:8px;text-align:center;">Total: ${fc(totalPaid)} · ${fc(perPerson)}/persoa</div>
+                <div style="margin-top:8px;">
+                    ${payments.slice(-3).reverse().map(p => `<div style="font-size:0.72rem;color:var(--text-muted);padding:2px 0;">${p.payer}: ${fc(p.amount)} — ${escapeHtml(p.concept)}</div>`).join('')}
+                </div>`;
         }
 
         function endTravelMode() {
@@ -5501,6 +5996,11 @@
             const daysLeft = Math.max(0, Math.ceil((end - today) / (1000 * 60 * 60 * 24)));
             const dailyLeft = daysLeft > 0 ? r2(remaining / daysLeft) : 0;
             if ($('travelModeTitle')) $('travelModeTitle').textContent = `✈️ ${tm.name}`;
+            // Actualizar selector de quen pagou
+            const payerSel = $('travelPayer');
+            if (payerSel && tm.participants) {
+                payerSel.innerHTML = tm.participants.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
+            }
             if ($('travelModeInfo')) $('travelModeInfo').innerHTML = `
                 <div style="display:grid;gap:6px;margin-top:6px;">
                     <div style="display:flex;justify-content:space-between;">
@@ -5517,6 +6017,8 @@
                     </div>
                     <div style="font-size:0.75rem;color:var(--text-muted);">${fd(tm.startDate)} → ${fd(tm.endDate)}</div>
                 </div>`;
+            // Calcular e mostrar balance en tempo real
+            updateTravelSplit();
         }
 
         // EXPORT/IMPORT
@@ -5564,7 +6066,7 @@
                 alertsConfig: AppState.alertsConfig,
                 extremeSavingMode: AppState.extremeSavingMode,
                 travelMode: AppState.travelMode,
-                categories: {
+                hourlyRate: AppState.hourlyRate, categories: {
                     expense: loadCategories('expense'),
                     income: loadCategories('income'),
                     recurring: loadCategories('recurring')
@@ -5973,6 +6475,7 @@
                 if (data.alertsConfig) AppState.alertsConfig = data.alertsConfig;
                 if (data.extremeSavingMode) AppState.extremeSavingMode = data.extremeSavingMode;
                 if (data.travelMode) AppState.travelMode = data.travelMode;
+                if (data.hourlyRate) AppState.hourlyRate = data.hourlyRate;
                 await saveAppConfig();
                 await loadData();
                 updateAllUI();
@@ -6026,6 +6529,7 @@
             AppState.recurringExpenses = d.recurringExpenses || []; AppState.savingsGoals = d.savingsGoals || [];
             AppState.debts = d.debts || []; AppState.transfers = d.transfers || []; AppState.notifications = d.notifications || [];
             AppState.calendarEvents = d.calendarEvents || [];
+            AppState.priceHistory = d.priceHistory || [];
             // Cargar payDay desde localStorage
             const localPayDay = parseInt(localStorage.getItem('cartinos_payDay'));
             if (localPayDay) {
@@ -6144,6 +6648,14 @@
                 $('btnReset')?.addEventListener('click', resetData);
                 $('btnSavePayDay')?.addEventListener('click', savePayDay);
                 $('btnClosePeriod')?.addEventListener('click', closePeriod);
+                $('btnSaveHourlyRate')?.addEventListener('click', async function () {
+                    const rate = parseFloat($('hourlyRateInput').value) || 0;
+                    AppState.hourlyRate = rate;
+                    await saveAppConfig();
+                    updateAllUI();
+                    toast(rate > 0 ? `Tarifa gardada: ${fc(rate)}/hora ✓` : 'Tarifa eliminada');
+                });
+                if ($('hourlyRateInput') && AppState.hourlyRate) $('hourlyRateInput').value = AppState.hourlyRate;
                 updateTravelModeUI();
                 $('btnSelectPeriods')?.addEventListener('click', function () {
                     const isSelecting = this.dataset.selecting === 'true';
@@ -6547,6 +7059,10 @@
             document.addEventListener('touchstart', e => {
                 const target = e.target.closest('.list-item');
                 if (!target || target.closest('.modal')) return;
+                // Pechar calquera swipe aberto
+                if (swipeElement && swipeElement !== target) {
+                    swipeElement.classList.remove('swiped');
+                }
                 swipeStartX = e.touches[0].pageX;
                 swipeElement = target;
             }, { passive: true });
@@ -6555,9 +7071,10 @@
                 if (!swipeElement) return;
                 const currentX = e.touches[0].pageX;
                 const diff = currentX - swipeStartX;
-                if (diff < 0 && diff > -100) {
-                    swipeElement.style.transform = `translateX(${diff}px)`;
-                    swipeElement.style.transition = 'none';
+                if (diff < -10) {
+                    swipeElement.classList.add('swiped');
+                } else if (diff > 10) {
+                    swipeElement.classList.remove('swiped');
                 }
             }, { passive: true });
 
@@ -6565,17 +7082,19 @@
                 if (!swipeElement) return;
                 const currentX = e.changedTouches[0].pageX;
                 const diff = currentX - swipeStartX;
-                swipeElement.style.transition = 'transform 0.3s ease';
-                if (diff < -60) {
-                    // Mostrar botón de borrado
-                    swipeElement.style.transform = 'translateX(-80px)';
-                } else {
-                    swipeElement.style.transform = 'translateX(0)';
+                if (diff >= -20) {
+                    swipeElement.classList.remove('swiped');
                 }
                 swipeElement = null;
             }, { passive: true });
-        }
 
+            // Pechar ao tocar fóra dun list-item
+            document.addEventListener('touchstart', e => {
+                if (!e.target.closest('.list-item')) {
+                    document.querySelectorAll('.list-item.swiped').forEach(el => el.classList.remove('swiped'));
+                }
+            }, { passive: true });
+        }
         // GESTOS TÁCTILES - Long press
         let longPressTimer = null;
 
@@ -6584,9 +7103,11 @@
                 const target = e.target.closest('.list-item');
                 if (!target) return;
                 longPressTimer = setTimeout(() => {
-                    // Vibración si está disponible
                     if (navigator.vibrate) navigator.vibrate(50);
-                    toast('Mantén pulsado para máis opcións', 'info');
+                    const expenseId = target.dataset.expenseId;
+                    if (expenseId) {
+                        showExpenseContextMenu(parseInt(expenseId), target);
+                    }
                 }, 600);
             }, { passive: true });
 
