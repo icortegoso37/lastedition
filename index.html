@@ -639,12 +639,13 @@
         .list-item-amount.neutral {
             color: var(--accent-cyan);
         }
-         .list-item {
+
+        .list-item {
             position: relative;
             overflow: hidden;
         }
 
-         .list-item-actions {
+        .list-item-actions {
             display: flex;
             gap: 6px;
             position: absolute;
@@ -658,6 +659,7 @@
             pointer-events: none;
             transition: opacity 0.25s ease;
         }
+
         .list-item.swiped .list-item-actions {
             opacity: 1;
             pointer-events: all;
@@ -1398,6 +1400,14 @@
                 </div>
                 <div class="chart-container"><canvas id="dashboardChart"></canvas></div>
             </div>
+            <div class="card" id="monthSummaryCard" style="display:none;">
+                <div class="card-header">
+                    <h2 class="card-title">📊 Resumo do mes anterior</h2>
+                    <button class="btn btn-secondary" style="padding:4px 8px;font-size:0.75rem;min-height:32px;"
+                        onclick="$('monthSummaryCard').style.display='none'">✕</button>
+                </div>
+                <div id="monthSummaryContent"></div>
+            </div>
             <div class="card" id="trafficLightCard" style="display:none;">
                 <div class="card-header">
                     <h2 class="card-title">🚦 Alertas de Categorías</h2>
@@ -1580,6 +1590,12 @@
                     </div>
                 </div>
             </div>
+            <div class="card" id="locationSummaryCard" style="display:none;">
+                <div class="card-header">
+                    <h2 class="card-title">📍 Gastos por Ubicación</h2>
+                </div>
+                <div id="locationSummaryContent"></div>
+            </div>
             <div class="card">
                 <div class="card-header">
                     <h2 class="card-title">📅 Semana Actual</h2>
@@ -1690,23 +1706,29 @@
                 <div class="card-header">
                     <h2 class="card-title">✈️ Modo Viaxe</h2>
                 </div>
-                 <div id="travelModeActive"
+                <div id="travelModeActive"
                     style="display:none;margin-bottom:15px;padding:12px;background:rgba(0,245,255,0.08);border-radius:10px;">
                     <div style="font-family:'Orbitron',monospace;font-size:0.8rem;color:var(--accent-cyan);margin-bottom:6px;"
                         id="travelModeTitle">Viaxe activa</div>
                     <div style="font-size:0.85rem;color:var(--text-secondary);" id="travelModeInfo"></div>
                     <div style="margin-top:12px;">
-                        <div style="font-family:'Orbitron',monospace;font-size:0.7rem;color:var(--accent-pink);margin-bottom:8px;text-transform:uppercase;">Rexistrar pago</div>
+                        <div
+                            style="font-family:'Orbitron',monospace;font-size:0.7rem;color:var(--accent-pink);margin-bottom:8px;text-transform:uppercase;">
+                            Rexistrar pago</div>
                         <div style="display:flex;gap:6px;margin-bottom:6px;">
                             <select class="form-select" id="travelPayer" style="flex:1;"></select>
-                            <input type="number" class="form-input" id="travelPayAmount" placeholder="€" step="0.01" inputmode="decimal" style="width:80px;">
+                            <input type="number" class="form-input" id="travelPayAmount" placeholder="€" step="0.01"
+                                inputmode="decimal" style="width:80px;">
                         </div>
-                        <input type="text" class="form-input" id="travelPayConcept" placeholder="Concepto (opcional)" style="margin-bottom:6px;">
-                        <button class="btn btn-primary" style="width:100%;" onclick="addTravelPayment()">+ Engadir pago</button>
+                        <input type="text" class="form-input" id="travelPayConcept" placeholder="Concepto (opcional)"
+                            style="margin-bottom:6px;">
+                        <button class="btn btn-primary" style="width:100%;" onclick="addTravelPayment()">+ Engadir
+                            pago</button>
                     </div>
                     <div id="travelSplitResult" style="margin-top:12px;"></div>
                     <div style="margin-top:10px;display:flex;gap:8px;">
-                        <button class="btn btn-danger" style="flex:1;" onclick="endTravelMode()">🏁 Rematar Viaxe</button>
+                        <button class="btn btn-danger" style="flex:1;" onclick="endTravelMode()">🏁 Rematar
+                            Viaxe</button>
                     </div>
                 </div>
                 <div id="travelModeForm">
@@ -1727,17 +1749,22 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Orzamento total (€) <span style="color:var(--text-muted);font-size:0.75rem;">— opcional</span></label>
-                        <input type="number" class="form-input" id="travelBudget" placeholder="Deixa baleiro se non tes orzamento" step="0.01" inputmode="decimal">
+                        <label class="form-label">Orzamento total (€) <span
+                                style="color:var(--text-muted);font-size:0.75rem;">— opcional</span></label>
+                        <input type="number" class="form-input" id="travelBudget"
+                            placeholder="Deixa baleiro se non tes orzamento" step="0.01" inputmode="decimal">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Participantes (separados por coma)</label>
-                        <input type="text" class="form-input" id="travelParticipants" placeholder="Ex: Iara, Xurxo, Roberto">
-                        <div style="font-size:0.72rem;color:var(--text-muted);margin-top:4px;">Ti sempre estás incluída como primeiro participante</div>
+                        <input type="text" class="form-input" id="travelParticipants"
+                            placeholder="Ex: Iara, Xurxo, Roberto">
+                        <div style="font-size:0.72rem;color:var(--text-muted);margin-top:4px;">Ti sempre estás incluída
+                            como primeiro participante</div>
                     </div>
                     <button class="btn btn-primary"
                         style="width:100%;background:linear-gradient(135deg,var(--accent-cyan),var(--accent-purple));"
-                        onclick="startTravelMode()">✈️ Iniciar Modo Viaxe</button>                </div>
+                        onclick="startTravelMode()">✈️ Iniciar Modo Viaxe</button>
+                </div>
             </div>
             <div class="card">
                 <div class="card-header">
@@ -2021,11 +2048,18 @@
                             name="date" required></div>
                 </div>
                 <div class="form-row">
-                    <div class="form-group"><label class="form-label">Tipo</label><select class="form-select"
-                            name="incomeType">
+                    <div class="form-group">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                            <label class="form-label" style="margin-bottom:0;">Tipo</label>
+                            <button type="button" class="btn btn-secondary"
+                                style="padding:2px 8px;font-size:0.72rem;min-height:26px;"
+                                onclick="addInlineCategory('income', 'incomeForm')">+ Nova</button>
+                        </div>
+                        <select class="form-select" name="incomeType">
                             <option value="regular">💼 Regular</option>
                             <option value="extra">🎁 Extra</option>
-                        </select></div>
+                        </select>
+                    </div>
                     <div class="form-group"><label class="form-label">Conta</label><select class="form-select"
                             name="accountId" required></select></div>
                 </div>
@@ -2059,8 +2093,14 @@
                 </div>
                 <div class="form-group"><label class="form-label">Conta</label><select class="form-select"
                         name="accountId" required></select></div>
-                <div class="form-group"><label class="form-label">Categoría</label><select class="form-select"
-                        name="category">
+                <div class="form-group">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                        <label class="form-label" style="margin-bottom:0;">Categoría</label>
+                        <button type="button" class="btn btn-secondary"
+                            style="padding:2px 8px;font-size:0.72rem;min-height:26px;"
+                            onclick="addInlineCategory('expense', 'expenseForm')">+ Nova</button>
+                    </div>
+                    <select class="form-select" name="category">
                         <option value="alimentacion">🍎 Alimentación</option>
                         <option value="transporte">🚗 Transporte</option>
                         <option value="ocio">🎮 Ocio</option>
@@ -2069,7 +2109,8 @@
                         <option value="cafe">☕ Café/Snacks</option>
                         <option value="subscricions">📱 Subscricións</option>
                         <option value="outros">📦 Outros</option>
-                    </select></div>
+                    </select>
+                </div>
                 <div class="form-group">
                     <label class="form-label">📍 Ubicación / Ruta (opcional)</label>
                     <input type="text" class="form-input" name="location" placeholder="Ex: Santiago, Ruta Norte..."
@@ -2099,14 +2140,21 @@
                 </div>
                 <div class="form-group"><label class="form-label">Conta</label><select class="form-select"
                         name="accountId" required></select></div>
-                <div class="form-group"><label class="form-label">Categoría</label><select class="form-select"
-                        name="category">
+                <div class="form-group">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                        <label class="form-label" style="margin-bottom:0;">Categoría</label>
+                        <button type="button" class="btn btn-secondary"
+                            style="padding:2px 8px;font-size:0.72rem;min-height:26px;"
+                            onclick="addInlineCategory('recurring', 'recurringForm')">+ Nova</button>
+                    </div>
+                    <select class="form-select" name="category">
                         <option value="vivienda">🏠 Vivenda</option>
                         <option value="servicios">💡 Servizos</option>
                         <option value="seguros">🛡️ Seguros</option>
                         <option value="subscricions">📱 Subscricións</option>
                         <option value="outros">📦 Outros</option>
-                    </select></div>
+                    </select>
+                </div>
                 <div class="form-group" style="margin-bottom:15px;">
                     <div style="display:flex;align-items:center;gap:10px;cursor:pointer;"
                         onclick="this.querySelector('.checkbox-custom').classList.toggle('checked')">
@@ -3881,7 +3929,7 @@
                         resultsList.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🛒</div><p>' + (AppState.searchQuery ? 'Sen resultados' : 'Rexistra gastos') + '</p></div>';
                         return;
                     }
-                    resultsList.innerHTML = filtered.map(e => `<div class="list-item" data-expense-id="${e.id}" style="${e.extraordinary ? 'opacity:0.7;border-left-color:var(--accent-purple);' : ''}"><div class="list-item-info"><div class="list-item-name">${escapeHtml(e.description)}${e.extraordinary ? ' <span style="font-size:0.7rem;color:var(--accent-purple);background:rgba(168,85,247,0.1);padding:1px 6px;border-radius:10px;">⭐ Extraordinario</span>' : ''}</div> <div class="list-item-details">${fd(e.date)} · ${cats[e.category] || '📦'}${e.location ? ' · 📍 ' + escapeHtml(e.location) : ''}${formatWorkTime(e.amount)}</div></div><div class="list-item-amount expense">-${fc(e.amount)}</div><div class="list-item-actions"><button class="btn btn-secondary btn-icon" onclick="editExpense(${e.id})">✎</button>
+                    resultsList.innerHTML = filtered.map(e => `<div class="list-item" data-expense-id="${e.id}" style="${e.extraordinary ? 'opacity:0.7;border-left-color:var(--accent-purple);' : ''}"><div class="list-item-info"><div class="list-item-name">${escapeHtml(e.description)}${e.extraordinary ? ' <span style="font-size:0.7rem;color:var(--accent-purple);background:rgba(168,85,247,0.1);padding:1px 6px;border-radius:10px;">⭐ Extraordinario</span>' : ''}</div> <div class="list-item-details">${fd(e.date)} · ${cats[e.category] || '📦'}${e.location ? ' · 📍 ' + escapeHtml(e.location) : ''}${formatWorkTime(e.amount)}</div></div><div class="list-item-amount expense">-${fc(e.amount)}</div><div class="list-item-actions"><button class="btn btn-secondary btn-icon" onclick="duplicateExpense(${e.id})" title="Duplicar">⧉</button><button class="btn btn-secondary btn-icon" onclick="editExpense(${e.id})">✎</button>
 <button class="btn btn-danger btn-icon" data-delete="expense" data-id="${e.id}">✕</button></div></div>`).join('');
                 });
             }
@@ -3893,7 +3941,7 @@
                 resultsList.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🛒</div><p>' + (AppState.searchQuery ? 'Sen resultados' : 'Rexistra gastos') + '</p></div>';
                 return;
             }
-            resultsList.innerHTML = items.map(e => `<div class="list-item" data-expense-id="${e.id}" style="${e.extraordinary ? 'opacity:0.7;border-left-color:var(--accent-purple);' : ''}"><div class="list-item-info"><div class="list-item-name">${escapeHtml(e.description)}${e.extraordinary ? ' <span style="font-size:0.7rem;color:var(--accent-purple);background:rgba(168,85,247,0.1);padding:1px 6px;border-radius:10px;">⭐ Extraordinario</span>' : ''}</div> <div class="list-item-details">${fd(e.date)} · ${cats[e.category] || '📦'}${e.location ? ' · 📍 ' + escapeHtml(e.location) : ''}${formatWorkTime(e.amount)}</div></div><div class="list-item-amount expense">-${fc(e.amount)}</div><div class="list-item-actions"><button class="btn btn-secondary btn-icon" onclick="editExpense(${e.id})">✎</button>
+            resultsList.innerHTML = items.map(e => `<div class="list-item" data-expense-id="${e.id}" style="${e.extraordinary ? 'opacity:0.7;border-left-color:var(--accent-purple);' : ''}"><div class="list-item-info"><div class="list-item-name">${escapeHtml(e.description)}${e.extraordinary ? ' <span style="font-size:0.7rem;color:var(--accent-purple);background:rgba(168,85,247,0.1);padding:1px 6px;border-radius:10px;">⭐ Extraordinario</span>' : ''}</div> <div class="list-item-details">${fd(e.date)} · ${cats[e.category] || '📦'}${e.location ? ' · 📍 ' + escapeHtml(e.location) : ''}${formatWorkTime(e.amount)}</div></div><div class="list-item-amount expense">-${fc(e.amount)}</div><div class="list-item-actions"><button class="btn btn-secondary btn-icon" onclick="duplicateExpense(${e.id})" title="Duplicar">⧉</button><button class="btn btn-secondary btn-icon" onclick="editExpense(${e.id})">✎</button>
 <button class="btn btn-danger btn-icon" data-delete="expense" data-id="${e.id}">✕</button></div></div>`).join('');
         }
 
@@ -3930,6 +3978,49 @@
             </div>
         </div>`;
             }).join('');
+        }
+
+        function addInlineCategory(type, formId) {
+            const label = prompt('Nome da nova categoría:');
+            if (!label) return;
+            const icon = prompt('Icona (emoji):', '📦') || '📦';
+            const key = label.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+            if (!key) { toast('Nome inválido', 'error'); return; }
+            const cats = loadCategories(type);
+            if (cats.find(c => c.key === key)) { toast('Esa categoría xa existe', 'error'); return; }
+            cats.push({ key, icon, label });
+            saveCategories(type, cats);
+            updateCategorySelects();
+            // Seleccionar a nova categoría no formulario
+            const form = $(formId);
+            if (form) {
+                const sel = type === 'income' ? form.querySelector('select[name="incomeType"]') : form.querySelector('select[name="category"]');
+                if (sel) {
+                    const opt = document.createElement('option');
+                    opt.value = key;
+                    opt.textContent = `${icon} ${label}`;
+                    sel.appendChild(opt);
+                    sel.value = key;
+                }
+            }
+            toast(`✅ Categoría "${icon} ${label}" creada e seleccionada`);
+        }
+
+        function duplicateExpense(id) {
+            const e = AppState.expenses.find(x => x.id === id); if (!e) return;
+            openModal('expenseModal');
+            const f = $('expenseForm');
+            f.editId.value = '';
+            f.description.value = e.description;
+            f.amount.value = e.amount;
+            f.date.value = new Date().toISOString().split('T')[0];
+            if (f.location) f.location.value = e.location || '';
+            const catSelect = f.querySelector('select[name="category"]');
+            if (catSelect) catSelect.value = e.category;
+            const accSelect = f.querySelector('select[name="accountId"]');
+            if (accSelect) accSelect.value = e.accountId;
+            $('expenseModal').querySelector('.modal-title').textContent = 'Duplicar Gasto';
+            toast(`⧉ Duplicando "${escapeHtml(e.description)}" — revisa e garda`);
         }
 
         function showExpenseContextMenu(id, target) {
@@ -4280,6 +4371,7 @@
                 case 'dashboard':
                     updateDashboardChart();
                     updateTrafficLight();
+                    checkMonthSummary();
                     break;
                 case 'accounts':
                     updateAccountsList();
@@ -4411,7 +4503,7 @@
             updateCashflowChart();
             updateRealVsProjectChart();
             updateRule502030();
-            updateComparisonChart();
+            updateLocationSummary(); updateComparisonChart();
             updateAccountsChart();
             updateCategoryChart();
             updatePeriodsChart();
@@ -4545,6 +4637,11 @@
             else if (score >= 40) { color = '#ff9f43'; emoji = '🧡'; label = 'Atención Necesaria'; }
             else { color = '#ff4757'; emoji = '❤️'; label = 'Situación Crítica'; }
 
+            // Gardar score mensual
+            const now3 = getEffectiveDate();
+            const scoreKey = `cartinos_score_${now3.getFullYear()}_${now3.getMonth()}`;
+            localStorage.setItem(scoreKey, score);
+
             el.innerHTML = `
                 <div style="font-size:4rem;line-height:1;">${emoji}</div>
                 <div style="font-family:'Orbitron',monospace;font-size:3rem;font-weight:800;color:${color};margin:10px 0;">${score}</div>
@@ -4552,12 +4649,37 @@
                 <div style="background:rgba(255,255,255,0.08);border-radius:20px;height:12px;overflow:hidden;margin:0 20px 20px;">
                     <div style="height:100%;width:${score}%;background:${color};border-radius:20px;transition:width 1s ease;"></div>
                 </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:left;font-size:0.75rem;color:var(--text-muted);">
+                   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:left;font-size:0.75rem;color:var(--text-muted);">
                     <div>🎯 Chegar a fin: <strong style="color:${factor1 >= 70 ? 'var(--accent-green)' : '#ff4757'}">${factor1}%</strong></div>
                     <div>💰 Aforro: <strong style="color:${factor2 >= 70 ? 'var(--accent-green)' : '#ff4757'}">${factor2}%</strong></div>
                     <div>🔄 Fixos: <strong style="color:${factor3 >= 70 ? 'var(--accent-green)' : '#ff4757'}">${factor3}%</strong></div>
                     <div>🚦 Semáforo: <strong style="color:${factor4 >= 70 ? 'var(--accent-green)' : '#ff4757'}">${factor4}%</strong></div>
-                </div>`;
+                </div>
+                ${(() => {
+                    const now4 = getEffectiveDate();
+                    const history = [];
+                    for (let i = 5; i >= 0; i--) {
+                        const d = new Date(now4.getFullYear(), now4.getMonth() - i, 1);
+                        const k = `cartinos_score_${d.getFullYear()}_${d.getMonth()}`;
+                        const v = localStorage.getItem(k);
+                        const monthLabel = d.toLocaleDateString('gl-ES', { month: 'short' });
+                        history.push({ label: monthLabel, value: v ? parseInt(v) : null });
+                    }
+                    const hasHistory = history.some(h => h.value !== null);
+                    if (!hasHistory) return '';
+                    const maxVal = 100;
+                    return `<div style="margin-top:16px;">
+                        <div style="font-family:'Orbitron',monospace;font-size:0.7rem;color:var(--accent-cyan);margin-bottom:8px;text-transform:uppercase;">Evolución</div>
+                        <div style="display:flex;align-items:flex-end;gap:4px;height:50px;">
+                            ${history.map(h => `
+                            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;">
+                                <div style="width:100%;background:${h.value !== null ? (h.value >= 80 ? '#39ff14' : h.value >= 60 ? '#ffd93d' : h.value >= 40 ? '#ff9f43' : '#ff4757') : 'rgba(255,255,255,0.1)'};border-radius:4px 4px 0 0;height:${h.value !== null ? Math.max(4, h.value / maxVal * 46) : 4}px;transition:height 0.5s;"></div>
+                                <div style="font-size:0.6rem;color:var(--text-muted);">${h.label}</div>
+                                <div style="font-size:0.6rem;color:var(--text-secondary);">${h.value !== null ? h.value : '—'}</div>
+                            </div>`).join('')}
+                        </div>
+                    </div>`;
+                })()}`;
         }
 
         function formatWorkTime(amount) {
@@ -4566,6 +4688,34 @@
             if (hours >= 1) return ` · ⏱️ ${hours.toFixed(1)}h traballo`;
             const minutes = Math.round(hours * 60);
             return ` · ⏱️ ${minutes}min traballo`;
+        }
+
+        function updateLocationSummary() {
+            const card = $('locationSummaryCard');
+            const el = $('locationSummaryContent');
+            if (!card || !el) return;
+            const withLocation = AppState.expenses.filter(e => e.location && e.location.trim());
+            if (!withLocation.length) { card.style.display = 'none'; return; }
+            const byLocation = {};
+            withLocation.forEach(e => {
+                const loc = e.location.trim();
+                if (!byLocation[loc]) byLocation[loc] = { total: 0, count: 0 };
+                byLocation[loc].total += parseFloat(e.amount) || 0;
+                byLocation[loc].count++;
+            });
+            const sorted = Object.entries(byLocation).sort((a, b) => b[1].total - a[1].total);
+            const maxTotal = sorted[0][1].total;
+            card.style.display = 'block';
+            el.innerHTML = sorted.map(([loc, data]) => `
+                <div style="margin-bottom:10px;">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:0.85rem;">
+                        <span>📍 ${escapeHtml(loc)}</span>
+                        <span style="font-family:'Orbitron',monospace;color:var(--accent-cyan);">${fc(r2(data.total))} <span style="color:var(--text-muted);font-size:0.7rem;">(${data.count} gastos)</span></span>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.08);border-radius:20px;height:6px;overflow:hidden;">
+                        <div style="height:100%;width:${(data.total / maxTotal * 100).toFixed(0)}%;background:var(--accent-cyan);border-radius:20px;transition:width 0.5s;"></div>
+                    </div>
+                </div>`).join('');
         }
 
         function updateRule502030() {
@@ -4616,6 +4766,60 @@
                         </div>
                     </div>`;
             }).join('')}`;
+        }
+
+        function checkMonthSummary() {
+            const now = getEffectiveDate();
+            if (now.getDate() !== 1) return; // Solo o primeiro día do mes
+            const lastShown = localStorage.getItem('cartinos_monthSummaryShown');
+            const thisMonth = `${now.getFullYear()}-${now.getMonth()}`;
+            if (lastShown === thisMonth) return; // Xa se mostrou este mes
+            // Calcular datos do mes anterior
+            const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            const prevMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+            const pm = prevMonth.getMonth(), py = prevMonth.getFullYear();
+            const prevExpenses = AppState.expenses.filter(e => {
+                if (!e || !e.date) return false;
+                const d = new Date(e.date);
+                return d.getMonth() === pm && d.getFullYear() === py;
+            });
+            const prevIncomes = AppState.incomes.filter(i => {
+                if (!i || !i.date) return false;
+                const d = new Date(i.date);
+                return d.getMonth() === pm && d.getFullYear() === py;
+            });
+            if (!prevExpenses.length && !prevIncomes.length) return;
+            const totalExpenses = prevExpenses.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+            const totalIncomes = prevIncomes.reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
+            const savedAmount = r2(totalIncomes - totalExpenses);
+            // Mellor e peor categoría
+            const byCat = {};
+            prevExpenses.forEach(e => { byCat[e.category] = (byCat[e.category] || 0) + (parseFloat(e.amount) || 0); });
+            const catNames = { alimentacion: '🍎 Alimentación', transporte: '🚗 Transporte', ocio: '🎮 Ocio', saude: '💊 Saúde', roupa: '👕 Roupa', cafe: '☕ Café', subscricions: '📱 Subscricións', vivienda: '🏠 Vivenda', servicios: '💡 Servizos', outros: '📦 Outros' };
+            const sorted = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
+            const worstCat = sorted[0];
+            const bestCat = sorted[sorted.length - 1];
+            const monthName = prevMonth.toLocaleDateString('gl-ES', { month: 'long', year: 'numeric' });
+            const el = $('monthSummaryContent');
+            const card = $('monthSummaryCard');
+            if (!el || !card) return;
+            el.innerHTML = `
+                <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:12px;">📅 ${monthName.charAt(0).toUpperCase() + monthName.slice(1)}</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+                    <div style="text-align:center;padding:8px;background:rgba(255,110,199,0.08);border-radius:8px;">
+                        <div style="font-family:'Orbitron',monospace;font-size:0.9rem;color:var(--accent-pink);">${fc(totalExpenses)}</div>
+                        <div style="font-size:0.7rem;color:var(--text-muted);">Total gastado</div>
+                    </div>
+                    <div style="text-align:center;padding:8px;background:rgba(57,255,20,0.08);border-radius:8px;">
+                        <div style="font-family:'Orbitron',monospace;font-size:0.9rem;color:${savedAmount >= 0 ? 'var(--accent-green)' : '#ff4757'};">${fc(savedAmount)}</div>
+                        <div style="font-size:0.7rem;color:var(--text-muted);">${savedAmount >= 0 ? 'Aforrado' : 'Déficit'}</div>
+                    </div>
+                </div>
+                ${worstCat ? `<div style="font-size:0.82rem;margin-bottom:6px;">📈 Categoría máis cara: <strong style="color:var(--accent-pink);">${catNames[worstCat[0]] || worstCat[0]}</strong> — ${fc(worstCat[1])}</div>` : ''}
+                ${bestCat && bestCat[0] !== worstCat?.[0] ? `<div style="font-size:0.82rem;">📉 Categoría máis barata: <strong style="color:var(--accent-green);">${catNames[bestCat[0]] || bestCat[0]}</strong> — ${fc(bestCat[1])}</div>` : ''}
+            `;
+            card.style.display = 'block';
+            localStorage.setItem('cartinos_monthSummaryShown', thisMonth);
         }
 
         function updateTrafficLight() {
@@ -5889,7 +6093,7 @@
             toast(`✈️ Modo Viaxe "${name}" activado! ${fc(dailyBudget)}/día`);
         }
 
-         function addTravelPayment() {
+        function addTravelPayment() {
             const payer = $('travelPayer')?.value;
             const amount = parseFloat($('travelPayAmount')?.value) || 0;
             const concept = $('travelPayConcept')?.value?.trim() || 'Pago';
@@ -7055,7 +7259,7 @@
         let swipeStartX = 0;
         let swipeElement = null;
 
-      function setupSwipeDelete() {
+        function setupSwipeDelete() {
             document.addEventListener('touchstart', e => {
                 // Se o tap é nun botón de acción, non activar swipe
                 if (e.target.closest('.list-item-actions')) return;
@@ -7140,7 +7344,7 @@
         let pullStartY = 0;
         let isPulling = false;
 
-         function setupPullToRefresh() {
+        function setupPullToRefresh() {
             document.addEventListener('touchstart', e => {
                 if (e.target.closest('.list-item-actions')) return;
                 if (window.scrollY === 0) {
