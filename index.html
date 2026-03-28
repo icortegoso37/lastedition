@@ -7082,17 +7082,25 @@
                 if (!swipeElement) return;
                 const currentX = e.changedTouches[0].pageX;
                 const diff = currentX - swipeStartX;
-                if (diff >= -20) {
+                // So pechamos se o swipe foi cara á dereita (cancelar)
+                if (diff > 20) {
                     swipeElement.classList.remove('swiped');
                 }
+                // Se o swipe foi cara á esquerda, mantemos aberto para que se poida pulsar
                 swipeElement = null;
             }, { passive: true });
 
-            // Pechar ao tocar fóra dun list-item
+            // Pechar ao tocar fóra dun list-item con swiped
             document.addEventListener('touchstart', e => {
-                if (!e.target.closest('.list-item')) {
+                const tappedItem = e.target.closest('.list-item');
+                if (!tappedItem) {
                     document.querySelectorAll('.list-item.swiped').forEach(el => el.classList.remove('swiped'));
+                    return;
                 }
+                // Se tocas un list-item diferente ao que está aberto, péchase o anterior
+                document.querySelectorAll('.list-item.swiped').forEach(el => {
+                    if (el !== tappedItem) el.classList.remove('swiped');
+                });
             }, { passive: true });
         }
         // GESTOS TÁCTILES - Long press
