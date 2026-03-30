@@ -3502,7 +3502,17 @@
                             'not-allowed': 'Permiso de micrófono denegado.',
                             'network': 'Erro de rede no recoñecemento.',
                         };
-                        toast(errors[event.error] || 'Erro no recoñecemento de voz.', 'error');
+                        const errMsg = errors[event.error] || 'Erro no recoñecemento de voz.';
+                        toast(errMsg + ' [' + event.error + ']', 'error');
+                        const log = document.getElementById('debugLog');
+                        const content = document.getElementById('debugLogContent');
+                        if (log && content) {
+                            log.style.display = 'block';
+                            const entry = document.createElement('div');
+                            entry.style.padding = '4px 0';
+                            entry.innerHTML = `<span style="color:#ffd93d;">${new Date().toLocaleTimeString()}</span> VOZ ERROR: <span style="color:#ff4757;">${event.error}</span>`;
+                            content.appendChild(entry);
+                        }
                     };
 
                     recognition.onend = () => {
