@@ -409,6 +409,23 @@
             transform: scale(0.95);
         }
 
+        .btn:active {
+            transform: scale(0.97);
+            opacity: 0.85;
+        }
+
+        .list-item:active {
+            transform: scale(0.98);
+        }
+
+        .nav-tab:active {
+            transform: scale(0.95);
+        }
+
+        .pattern-card:active {
+            transform: scale(0.98);
+        }
+
         .fab-income {
             background: linear-gradient(135deg, var(--accent-green) 0%, #00b894 100%);
             color: white;
@@ -1323,11 +1340,11 @@
                         <div class="info-value" id="totalBalance">0,00 €</div>
                     </div>
                     <div class="info-item">
-                        <div class="info-label">Aforro</div>
-                        <div class="info-value" id="totalSavings">0,00 €</div>
+                        <div class="info-label">Días ata 0</div>
+                        <div class="info-value" id="totalSavings">—</div>
                     </div>
                     <div class="info-item">
-                        <div class="info-label">Comprometido</div>
+                        <div class="info-label">Media diaria</div>
                         <div class="info-value" id="committedAmount">0,00 €</div>
                     </div>
                     <div class="info-item">
@@ -1352,7 +1369,7 @@
             <button class="nav-tab" data-section="recurring">Fixos</button>
             <button class="nav-tab" data-section="analysis">Análise</button>
             <button class="nav-tab" data-section="calendar">Calendario</button>
-            <button class="nav-tab" data-section="tools">Ferramentas</buttom>
+            <button class="nav-tab" data-section="tools">Ferramentas</button>
                 <button class="nav-tab" data-section="settings">Axustes</button>
         </nav>
         <!-- SECTIONS -->
@@ -1377,20 +1394,15 @@
                             0,00 €</div>
                         <div class="stat-label">Fixos pendentes</div>
                     </div>
-                    <div style="text-align:center;padding:8px;background:rgba(0,245,255,0.08);border-radius:8px;">
-                        <div class="stat-value" style="color:var(--accent-cyan);font-size:1rem;" id="statDailyAvg">0,00
-                            €</div>
-                        <div class="stat-label">Media diaria</div>
+                    <div style="text-align:center;padding:8px;background:rgba(168,85,247,0.08);border-radius:8px;">
+                        <div class="stat-value" style="color:var(--accent-purple);font-size:1rem;" id="statSavings">
+                            0,00 €</div>
+                        <div class="stat-label">Aforro</div>
                     </div>
                     <div style="text-align:center;padding:8px;background:rgba(57,255,20,0.05);border-radius:8px;">
-                        <div class="stat-value" style="color:var(--accent-green);font-size:1rem;" id="statIncomeMonth">
+                        <div class="stat-value" style="color:var(--accent-green);font-size:1rem;" id="statNetWorth">
                             0,00 €</div>
-                        <div class="stat-label">Ingresos mes</div>
-                    </div>
-                    <div style="text-align:center;padding:8px;background:rgba(255,110,199,0.05);border-radius:8px;">
-                        <div class="stat-value" style="color:var(--accent-pink);font-size:1rem;" id="statExpenseMonth">
-                            0,00 €</div>
-                        <div class="stat-label">Gastos mes</div>
+                        <div class="stat-label">Patrimonio neto</div>
                     </div>
                 </div>
             </div>
@@ -1606,6 +1618,14 @@
             </div>
             <div class="card">
                 <div class="card-header">
+                    <h2 class="card-title">🌊 Fluxo Real vs Proxectado</h2>
+                </div>
+                <div id="realvsprojectInfo"
+                    style="font-size:0.75rem;color:var(--text-muted);margin-bottom:8px;text-align:center;"></div>
+                <div class="chart-container" style="height:200px;"><canvas id="realvsprojectChart"></canvas></div>
+            </div>
+            <div class="card">
+                <div class="card-header">
                     <h2 class="card-title">💸 Cash Flow Diario</h2>
                 </div>
                 <div class="simulator-horizon" id="cashflowBtns">
@@ -1615,14 +1635,6 @@
                 <div id="cashflowInfo"
                     style="font-size:0.75rem;color:var(--text-muted);margin-bottom:8px;text-align:center;"></div>
                 <div class="chart-container" style="height:200px;"><canvas id="cashflowChart"></canvas></div>
-            </div>
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title">🌊 Fluxo Real vs Proxectado</h2>
-                </div>
-                <div id="realvsprojectInfo"
-                    style="font-size:0.75rem;color:var(--text-muted);margin-bottom:8px;text-align:center;"></div>
-                <div class="chart-container" style="height:200px;"><canvas id="realvsprojectChart"></canvas></div>
             </div>
             <div class="card">
                 <div class="card-header">
@@ -1821,16 +1833,6 @@
             <div class="card">
                 <div class="card-header">
                     <h2 class="card-title">📦 Produtos Frecuentes</h2>
-                </div>
-                <p style="color:var(--text-muted);margin-bottom:12px;font-size:0.8rem;">Rexistra o prezo de produtos
-                    habituais e ve a súa evolución.</p>
-                <div style="display:flex;gap:8px;margin-bottom:12px;">
-                    <input type="text" class="form-input" id="productName" placeholder="Ex: Menú Bar Pepe"
-                        style="flex:1;">
-                    <input type="number" class="form-input" id="productPrice" placeholder="€" step="0.01"
-                        inputmode="decimal" style="width:80px;">
-                    <button class="btn btn-primary" onclick="addProductPrice()" style="white-space:nowrap;">+
-                        Engadir</button>
                 </div>
                 <div id="productHistoryList"></div>
             </div>
@@ -2394,27 +2396,27 @@
                 const ts = calculateTotalSavings(data.savingsGoals);
                 const today = getEffectiveDate(); today.setHours(0, 0, 0, 0);
 
-                const monthlyIncomes = (() => {
-                    const last3 = [];
-                    for (let i = 1; i <= 3; i++) {
+  const monthlyIncomes = (() => {
+                    const found = [];
+                    for (let i = 1; i <= 12; i++) {
                         const m = new Date(today.getFullYear(), today.getMonth() - i, 1);
                         const total = (data.incomes || []).filter(x => {
                             if (!x || !x.date) return false;
                             const d = new Date(x.date); d.setHours(0, 0, 0, 0);
                             return d.getMonth() === m.getMonth() && d.getFullYear() === m.getFullYear();
                         }).reduce((s, x) => s + (parseFloat(x.amount) || 0), 0);
-                        if (total > 0) last3.push(total);
+                        if (total > 0) found.push(total);
+                        if (found.length >= 3) break;
                     }
-                    if (last3.length === 0) {
+                    if (found.length === 0) {
                         return (data.incomes || []).filter(x => {
                             if (!x || !x.date) return false;
                             const d = new Date(x.date); d.setHours(0, 0, 0, 0);
                             return d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
                         }).reduce((s, x) => s + (parseFloat(x.amount) || 0), 0);
                     }
-                    return r2(last3.reduce((s, x) => s + x, 0) / last3.length);
-                })();
-                const finalMonthlyIncomes = (customIncome && customIncome > 0) ? customIncome : monthlyIncomes;
+                    return r2(found.reduce((s, x) => s + x, 0) / found.length);
+                })();                const finalMonthlyIncomes = (customIncome && customIncome > 0) ? customIncome : monthlyIncomes;
 
                 const fixedExpensesNow = (data.recurringExpenses || []).reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
                 const fixedLast3 = (() => {
@@ -2434,25 +2436,26 @@
                 })();
                 const fixedExpenses = fixedLast3;
 
-                const variableExpenses = (() => {
-                    const last3 = [];
-                    for (let i = 1; i <= 3; i++) {
+                   const variableExpenses = (() => {
+                    const found = [];
+                    for (let i = 1; i <= 12; i++) {
                         const m = new Date(today.getFullYear(), today.getMonth() - i, 1);
                         const total = (data.expenses || []).filter(x => {
                             if (!x || !x.date) return false;
                             const d = new Date(x.date); d.setHours(0, 0, 0, 0);
                             return d.getMonth() === m.getMonth() && d.getFullYear() === m.getFullYear();
                         }).reduce((s, x) => s + (parseFloat(x.amount) || 0), 0);
-                        if (total > 0) last3.push(total);
+                        if (total > 0) found.push(total);
+                        if (found.length >= 3) break;
                     }
-                    if (last3.length === 0) {
+                    if (found.length === 0) {
                         return (data.expenses || []).filter(x => {
                             if (!x || !x.date) return false;
                             const d = new Date(x.date); d.setHours(0, 0, 0, 0);
                             return d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
                         }).reduce((s, x) => s + (parseFloat(x.amount) || 0), 0);
                     }
-                    return r2(last3.reduce((s, x) => s + x, 0) / last3.length);
+                    return r2(found.reduce((s, x) => s + x, 0) / found.length);
                 })();
 
                 const ds = (data.savingsGoals || []).filter(g => g && g.active !== false).reduce((s, g) => s + (parseFloat(g.dailyAmount) || 0), 0);
@@ -2706,7 +2709,6 @@
             const _now = getEffectiveDate();
             const sixtyDaysAgo = new Date(_now); sixtyDaysAgo.setDate(_now.getDate() - 60);
             const thirtyDaysAgo = new Date(_now); thirtyDaysAgo.setDate(_now.getDate() - 30);
-            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
             const recentExpenses = AppState.expenses.filter(e => new Date(e.date) >= sixtyDaysAgo);
             const last30 = recentExpenses.filter(e => new Date(e.date) >= thirtyDaysAgo);
@@ -2911,6 +2913,7 @@
             // Alerta objetivos en riesgo
             if (AppState.alertsConfig.alertGoalsAtRisk) {
                 AppState.savingsGoals.forEach(goal => {
+                    if (goal.paused) return;
                     if (goal.active !== false && goal.targetDate) {
                         const targetDate = new Date(goal.targetDate);
                         const daysRemaining = Math.ceil((targetDate - getEffectiveDate()) / (1000 * 60 * 60 * 24));
@@ -3706,18 +3709,23 @@
             // NOVO: Smart Advice
             $('smartAdvice').textContent = FinancialEngine.getSmartAdvice(r);
             $('totalBalance').textContent = fc(FinancialEngine.calculateTotalBalance(AppState.accounts));
-            $('totalSavings').textContent = fc(FinancialEngine.calculateTotalSavings(AppState.savingsGoals));
-            $('committedAmount').textContent = fc(r.breakdown.committedRecurring);
+            const _diasAtaCero = FinancialEngine.calculateMonthlyStats(AppState);
+            const _dayInPeriod = r.periodInfo ? r.periodInfo.dayInPeriod : 1;
+            const _ritmoGasto = _dayInPeriod > 0 ? r2(_diasAtaCero.periodExpenses / _dayInPeriod) : 0;
+            const _saldoGastoDiario = r.breakdown.dailySpendingBalance || 0;
+            const _dtz = _ritmoGasto > 0 ? Math.floor(_saldoGastoDiario / _ritmoGasto) : null;
+            $('totalSavings').textContent = _dtz !== null ? _dtz + ' días' : '—';
+            $('committedAmount').textContent = fc(r.breakdown.availablePerDay);
             // Mostrar día do período en lugar de día do mes
             $('currentDay').textContent = r.periodInfo ? `${r.periodInfo.dayInPeriod}/${r.periodInfo.totalDays}` : new Date().getDate();
             const s = FinancialEngine.calculateMonthlyStats(AppState);
-            $('statIncomeMonth').textContent = fc(s.monthlyIncomes);
-            $('statExpenseMonth').textContent = fc(s.totalMonthlyExpenses);
             $('statRecurring').textContent = fc(s.pendingRecurring);
-            $('statDailyAvg').textContent = fc(s.dailyAverage);
             // Período real — actualizar si existen los elementos
             if ($('statIncomePeriod')) $('statIncomePeriod').textContent = fc(s.periodIncomes);
             if ($('statExpensePeriod')) $('statExpensePeriod').textContent = fc(s.periodExpenses);
+            if ($('statSavings')) $('statSavings').textContent = fc(FinancialEngine.calculateTotalSavings(AppState.savingsGoals));
+            const _deudasNeto = (AppState.debts || []).filter(d => d && d.direction === 'owe').reduce((sum, d) => sum + Math.max(0, (parseFloat(d.amount) || 0) - (parseFloat(d.paidAmount) || 0)), 0);
+            if ($('statNetWorth')) $('statNetWorth').textContent = fc(r2(FinancialEngine.calculateTotalBalance(AppState.accounts) - _deudasNeto));
             updatePeriodInfo();
             const compactAvailable = $('compactAvailable');
             const compactWithoutSavings = $('compactWithoutSavings');
@@ -4517,52 +4525,86 @@
             updateProductHistoryList();
         }
 
-        async function addProductPrice() {
-            const name = $('productName').value.trim();
-            const price = parseFloat($('productPrice').value) || 0;
-            if (!name) { toast('Introduce o nome do produto', 'error'); return; }
-            if (price <= 0) { toast('Introduce un prezo válido', 'error'); return; }
-            const entry = { name, price, date: new Date().toISOString().split('T')[0] };
-            const id = await Database.add('priceHistory', entry);
-            if (!AppState.priceHistory) AppState.priceHistory = [];
-            AppState.priceHistory.push({ ...entry, id });
-            $('productPrice').value = '';
-            updateProductHistoryList();
-            toast(`📦 ${name}: ${fc(price)} rexistrado ✓`);
-        }
-
-        function updateProductHistoryList() {
+       function updateProductHistoryList() {
             const el = $('productHistoryList'); if (!el) return;
+            // Auto-detectar produtos repetidos dos gastos históricos
+            const autoProducts = {};
+            AppState.expenses.forEach(e => {
+                if (!e || !e.description || !e.amount || !e.date) return;
+                const key = e.description.toLowerCase().trim();
+                if (!autoProducts[key]) autoProducts[key] = { name: e.description, entries: [] };
+                autoProducts[key].entries.push({ price: parseFloat(e.amount), date: e.date });
+            });
+            const autoDetected = Object.values(autoProducts)
+                .filter(p => p.entries.length >= 2)
+                .map(p => {
+                    const sorted = [...p.entries].sort((a, b) => new Date(b.date) - new Date(a.date));
+                    return { name: p.name, entries: sorted };
+                })
+                .sort((a, b) => b.entries.length - a.entries.length)
+                .slice(0, 10);
+            // Produtos manuais
             const history = AppState.priceHistory || [];
-            if (!history.length) { el.innerHTML = '<div style="color:var(--text-muted);font-size:0.8rem;text-align:center;padding:10px;">Sen produtos rexistrados</div>'; return; }
             const byProduct = {};
             history.forEach(h => {
                 if (!byProduct[h.name]) byProduct[h.name] = [];
                 byProduct[h.name].push(h);
             });
-            el.innerHTML = Object.entries(byProduct).map(([name, entries]) => {
-                const sorted = [...entries].sort((a, b) => new Date(b.date) - new Date(a.date));
-                const latest = sorted[0];
-                const previous = sorted[1];
-                const trend = previous ? latest.price - previous.price : 0;
-                const trendIcon = trend > 0 ? '📈' : trend < 0 ? '📉' : '➡️';
-                const trendColor = trend > 0 ? '#ff4757' : trend < 0 ? '#39ff14' : 'var(--text-muted)';
-                return `<div style="padding:10px 0;border-bottom:1px solid rgba(255,110,199,0.1);">
-                    <div style="display:flex;justify-content:space-between;align-items:center;">
-                        <div>
-                            <div style="font-size:0.85rem;color:var(--text-primary);">${escapeHtml(name)}</div>
-                            <div style="font-size:0.72rem;color:var(--text-muted);">${fd(latest.date)} · ${sorted.length} rexistro(s)</div>
+            let html = '';
+            // Sección auto-detectada
+            if (autoDetected.length) {
+                html += `<div style="font-family:'Orbitron',monospace;font-size:0.7rem;color:var(--accent-cyan);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.1em;">🤖 Auto-detectados dos teus gastos</div>`;
+                html += autoDetected.map(p => {
+                    const latest = p.entries[0];
+                    const previous = p.entries[1];
+                    const trend = previous ? latest.price - previous.price : 0;
+                    const trendIcon = trend > 0.01 ? '📈' : trend < -0.01 ? '📉' : '➡️';
+                    const trendColor = trend > 0.01 ? '#ff4757' : trend < -0.01 ? '#39ff14' : 'var(--text-muted)';
+                    const prices = p.entries.map(e => e.price);
+                    const minP = Math.min(...prices), maxP = Math.max(...prices);
+                    return `<div style="padding:10px 0;border-bottom:1px solid rgba(255,110,199,0.1);">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <div>
+                                <div style="font-size:0.85rem;color:var(--text-primary);">${escapeHtml(p.name)}</div>
+                                <div style="font-size:0.72rem;color:var(--text-muted);">${p.entries.length} veces · rango: ${fc(minP)}–${fc(maxP)}</div>
+                            </div>
+                            <div style="text-align:right;">
+                                <div style="font-family:'Orbitron',monospace;font-size:0.9rem;color:var(--accent-cyan);">${fc(latest.price)}</div>
+                                ${previous ? `<div style="font-size:0.72rem;color:${trendColor};">${trendIcon} ${trend > 0 ? '+' : ''}${fc(Math.abs(trend))} vs anterior</div>` : ''}
+                            </div>
                         </div>
-                        <div style="text-align:right;">
-                            <div style="font-family:'Orbitron',monospace;font-size:0.9rem;color:var(--accent-cyan);">${fc(latest.price)}</div>
-                            ${previous ? `<div style="font-size:0.72rem;color:${trendColor};">${trendIcon} ${trend > 0 ? '+' : ''}${fc(trend)} vs anterior</div>` : ''}
+                    </div>`;
+                }).join('');
+            }
+            // Sección manual
+            if (Object.keys(byProduct).length) {
+                html += `<div style="font-family:'Orbitron',monospace;font-size:0.7rem;color:var(--accent-purple);margin:15px 0 10px;text-transform:uppercase;letter-spacing:0.1em;">📝 Rexistrados manualmente</div>`;
+                html += Object.entries(byProduct).map(([name, entries]) => {
+                    const sorted = [...entries].sort((a, b) => new Date(b.date) - new Date(a.date));
+                    const latest = sorted[0];
+                    const previous = sorted[1];
+                    const trend = previous ? latest.price - previous.price : 0;
+                    const trendIcon = trend > 0 ? '📈' : trend < 0 ? '📉' : '➡️';
+                    const trendColor = trend > 0 ? '#ff4757' : trend < 0 ? '#39ff14' : 'var(--text-muted)';
+                    return `<div style="padding:10px 0;border-bottom:1px solid rgba(255,110,199,0.1);">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <div>
+                                <div style="font-size:0.85rem;color:var(--text-primary);">${escapeHtml(name)}</div>
+                                <div style="font-size:0.72rem;color:var(--text-muted);">${fd(latest.date)} · ${sorted.length} rexistro(s)</div>
+                            </div>
+                            <div style="text-align:right;">
+                                <div style="font-family:'Orbitron',monospace;font-size:0.9rem;color:var(--accent-cyan);">${fc(latest.price)}</div>
+                                ${previous ? `<div style="font-size:0.72rem;color:${trendColor};">${trendIcon} ${trend > 0 ? '+' : ''}${fc(trend)} vs anterior</div>` : ''}
+                            </div>
                         </div>
-                    </div>
-                    ${sorted.length > 1 ? `<div style="margin-top:6px;font-size:0.7rem;color:var(--text-muted);">Historial: ${sorted.map(e => `${fd(e.date)}: ${fc(e.price)}`).join(' → ')}</div>` : ''}
-                </div>`;
-            }).join('');
+                        ${sorted.length > 1 ? `<div style="margin-top:6px;font-size:0.7rem;color:var(--text-muted);">Historial: ${sorted.map(e => `${fd(e.date)}: ${fc(e.price)}`).join(' → ')}</div>` : ''}
+                    </div>`;
+                }).join('');
+            }
+            if (!html) { el.innerHTML = '<div style="color:var(--text-muted);font-size:0.8rem;text-align:center;padding:10px;">Engade gastos para ver a evolución de prezos</div>'; return; }
+            el.innerHTML = html;
         }
-
+           
         function updateHealthScore() {
             const el = $('healthScoreDisplay'); if (!el) return;
             const r = FinancialEngine.calculateAvailableToday(AppState);
@@ -5281,6 +5323,7 @@
 
         async function saveIncome(e) {
             e.preventDefault();
+            document.activeElement.blur();
             if (isProcessing) { toast('Agarda, procesando...', 'info'); return; }
             isProcessing = true;
             try {
@@ -5340,6 +5383,7 @@
 
         async function saveExpense(e) {
             e.preventDefault();
+            document.activeElement.blur();
             if (isProcessing) { toast('Agarda, procesando...', 'info'); return; }
             isProcessing = true;
             try {
@@ -5422,6 +5466,7 @@
         }
         async function saveRecurring(e) {
             e.preventDefault();
+            document.activeElement.blur();
             const f = e.target;
             const accountId = parseInt(f.accountId.value);
             const acc = AppState.accounts.find(a => a.id === accountId);
@@ -5437,6 +5482,7 @@
         }
         async function saveSavingsGoal(e) {
             e.preventDefault();
+            document.activeElement.blur();
             const f = e.target;
             const data = { name: f.name.value, targetAmount: parseFloat(f.targetAmount.value) || 0, targetDate: f.targetDate.value || null, dailyAmount: parseFloat(f.dailyAmount.value) || 0, currentAmount: parseFloat(f.currentAmount.value) || 0, active: true };
             const id = await Database.add('savingsGoals', data);
@@ -5445,6 +5491,7 @@
         }
         async function saveDebt(e) {
             e.preventDefault();
+            document.activeElement.blur();;
             const f = e.target;
             const editId = f.editId.value ? parseInt(f.editId.value) : null;
             const initialAmount = parseFloat(f.amount.value) || 0;
@@ -5578,6 +5625,7 @@
         }
         async function saveTransfer(e) {
             e.preventDefault();
+            document.activeElement.blur();
             const f = e.target, fid = parseInt(f.fromAccount.value), tid = parseInt(f.toAccount.value), amt = parseFloat(f.amount.value) || 0;
             if (fid === tid) { toast('Contas deben ser diferentes', 'error'); return; }
             const fa = AppState.accounts.find(a => a.id === fid), ta = AppState.accounts.find(a => a.id === tid);
@@ -6786,7 +6834,7 @@
                     const recDateThisPeriod = new Date(periodStart);
                     recDateThisPeriod.setDate(recDay);
                     const alreadyPaid = AppState.expenses.some(e =>
-                        e.description === rec.name &&
+                        e.description === rec.description &&
                         new Date(e.date) >= periodStart &&
                         new Date(e.date) <= periodEnd
                     );
@@ -7441,6 +7489,43 @@
             }
         }, 500);
 
+    </script>
+
+    <!-- SISTEMA DE LOGS PARA DEBUG EN SAFARI iOS -->
+    <div id="debugLog" style="display:none;position:fixed;bottom:0;left:0;right:0;max-height:40vh;overflow-y:auto;background:rgba(0,0,0,0.92);border-top:2px solid #ff4757;z-index:99999;padding:8px;font-family:monospace;font-size:0.7rem;color:#ff4757;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <span style="color:#ffd93d;font-weight:bold;">🐛 DEBUG LOG</span>
+            <button onclick="document.getElementById('debugLog').style.display='none'" style="background:#ff4757;color:white;border:none;padding:2px 8px;border-radius:4px;font-size:0.7rem;">✕</button>
+        </div>
+        <div id="debugLogContent"></div>
+    </div>
+    <script>
+        window.onerror = function(msg, src, line, col, err) {
+            const log = document.getElementById('debugLog');
+            const content = document.getElementById('debugLogContent');
+            if (log && content) {
+                log.style.display = 'block';
+                const entry = document.createElement('div');
+                entry.style.borderBottom = '1px solid rgba(255,71,87,0.3)';
+                entry.style.padding = '4px 0';
+                entry.innerHTML = `<span style="color:#ffd93d;">${new Date().toLocaleTimeString()}</span> <span style="color:#ff4757;">${msg}</span><br><span style="color:#a0a0c0;">Liña ${line} · ${src?.split('/').pop()}</span>`;
+                content.appendChild(entry);
+            }
+            return false;
+        };
+
+        window.addEventListener('unhandledrejection', function(e) {
+            const log = document.getElementById('debugLog');
+            const content = document.getElementById('debugLogContent');
+            if (log && content) {
+                log.style.display = 'block';
+                const entry = document.createElement('div');
+                entry.style.borderBottom = '1px solid rgba(255,71,87,0.3)';
+                entry.style.padding = '4px 0';
+                entry.innerHTML = `<span style="color:#ffd93d;">${new Date().toLocaleTimeString()}</span> <span style="color:#ff9f43;">Promise rejected: ${e.reason}</span>`;
+                content.appendChild(entry);
+            }
+        });
     </script>
 </body>
 
