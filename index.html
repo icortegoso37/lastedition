@@ -1314,7 +1314,7 @@
     </div>
     <div class="app-container">
         <header>
-            <div class="piggy-icon">🐷</div>
+            <div class="piggy-icon" id="piggyBtn" style="cursor:pointer;" onclick="showPiggySummary()">🐷</div>
             <h1 class="logo">CARTIÑOS</h1>
             <p class="subtitle">Xestión Financeira</p>
         </header>
@@ -1411,6 +1411,14 @@
                     <h2 class="card-title">📊 Evolución</h2>
                 </div>
                 <div class="chart-container"><canvas id="dashboardChart"></canvas></div>
+            </div>
+            <div class="card" id="weeklySummaryCard" style="display:none;">
+                <div class="card-header">
+                    <h2 class="card-title">📅 Resumo semanal</h2>
+                    <button class="btn btn-secondary" style="padding:4px 8px;font-size:0.75rem;min-height:32px;"
+                        onclick="$('weeklySummaryCard').style.display='none'">✕</button>
+                </div>
+                <div id="weeklySummaryContent"></div>
             </div>
             <div class="card" id="monthSummaryCard" style="display:none;">
                 <div class="card-header">
@@ -1542,7 +1550,7 @@
                 </div>
                 <div class="secondary-info" style="grid-template-columns: repeat(3, 1fr); gap: 10px;">
                     <div class="info-item">
-                        <div class="info-label">Taxa Aforro</div>
+                        <div class="info-label">Aforro Planificado</div>
                         <div class="info-value" id="kpiSavingsRate" style="color:var(--accent-green);">—</div>
                     </div>
                     <div class="info-item">
@@ -1566,11 +1574,11 @@
                         <div class="info-value" id="kpiDaysToZero" style="color:var(--accent-pink);">—</div>
                     </div>
                     <div class="info-item">
-                        <div class="info-label">Aforro Fondo</div>
+                        <div class="info-label">Metas ao día</div>
                         <div class="info-value" id="kpiEmergencyFund" style="color:var(--accent-green);">—</div>
                     </div>
                     <div class="info-item">
-                        <div class="info-label">Liquidez</div>
+                        <div class="info-label">Liquidez (días)</div>
                         <div class="info-value" id="kpiLiquidity" style="color:var(--accent-cyan);">—</div>
                     </div>
                     <div class="info-item">
@@ -1582,7 +1590,7 @@
                         <div class="info-value" id="kpiNetWorth" style="color:var(--accent-green);">—</div>
                     </div>
                     <div class="info-item">
-                        <div class="info-label">Taxa Aforro Total</div>
+                        <div class="info-label">Aforro Real</div>
                         <div class="info-value" id="kpiTotalSavingsRate" style="color:var(--accent-green);">—</div>
                     </div>
                     <div class="info-item">
@@ -2292,7 +2300,7 @@
                 const currentPeriodKey = getCurrentPeriodKey();
 
                 const committedRecurring = (data.recurringExpenses || []).filter(e => {
-                    if (!e) return false;
+                    if (!e || e.archived) return false;
                     const paidManually = e.paidPeriods && e.paidPeriods.includes(currentPeriodKey);
                     return !paidManually;
                 }).reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
@@ -2441,7 +2449,7 @@
                     for (let i = 1; i <= 12; i++) {
                         const m = new Date(today.getFullYear(), today.getMonth() - i, 1);
                         const total = (data.expenses || []).filter(x => {
-                            if (!x || !x.date) return false;
+                            if (!x || !x.date || x.extraordinary) return false;
                             const d = new Date(x.date); d.setHours(0, 0, 0, 0);
                             return d.getMonth() === m.getMonth() && d.getFullYear() === m.getFullYear();
                         }).reduce((s, x) => s + (parseFloat(x.amount) || 0), 0);
@@ -2450,7 +2458,7 @@
                     }
                     if (found.length === 0) {
                         return (data.expenses || []).filter(x => {
-                            if (!x || !x.date) return false;
+                            if (!x || !x.date || x.extraordinary) return false;
                             const d = new Date(x.date); d.setHours(0, 0, 0, 0);
                             return d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
                         }).reduce((s, x) => s + (parseFloat(x.amount) || 0), 0);
@@ -2520,26 +2528,57 @@
             function getSmartAdvice(r) {
                 if (!r) return "💡 Engade contas para comezar";
 
+                // Detectar inflación persoal por categoría
+                let inflacionPhrase = '';
+                const _now = new Date(); _now.setHours(0,0,0,0);
+                const _cm = _now.getMonth(), _cy = _now.getFullYear();
+                const _catActual = {};
+                const _cat3m = {};
+                AppState.expenses.forEach(e => {
+                    if (!e || !e.date || e.extraordinary) return;
+                    const d = new Date(e.date); d.setHours(0,0,0,0);
+                    if (d.getMonth() === _cm && d.getFullYear() === _cy) {
+                        _catActual[e.category] = (_catActual[e.category] || 0) + (parseFloat(e.amount) || 0);
+                    }
+                    const monthsAgo = (_cy - d.getFullYear()) * 12 + (_cm - d.getMonth());
+                    if (monthsAgo >= 1 && monthsAgo <= 3) {
+                        _cat3m[e.category] = (_cat3m[e.category] || 0) + (parseFloat(e.amount) || 0);
+                    }
+                });
+                const _catNames = { alimentacion: 'Alimentación', transporte: 'Transporte', ocio: 'Ocio', saude: 'Saúde', roupa: 'Roupa', cafe: 'Café', subscricions: 'Subscricións', outros: 'Outros', vivienda: 'Vivenda', servicios: 'Servizos' };
+                for (const cat of Object.keys(_catActual)) {
+                    if (_cat3m[cat] && _cat3m[cat] > 0) {
+                        const _media3m = r2(_cat3m[cat] / 3);
+                        const _subida = ((_catActual[cat] - _media3m) / _media3m) * 100;
+                        if (_subida > 15 && _catActual[cat] > 20) {
+                            inflacionPhrase = ` 📈 ${_catNames[cat] || cat} subiu un ${_subida.toFixed(0)}% vs a media dos últimos 3 meses.`;
+                            break;
+                        }
+                    }
+                }
+
                 // Calcular predicción de cierre de período
                 let predictionPhrase = '';
-                if (r.periodInfo && r.periodInfo.dayInPeriod > 1) {
+                if (r.periodInfo && r.periodInfo.dayInPeriod > 3) {
                     const gastosDiarios = AppState.expenses
                         .filter(e => {
-                            if (!e || !e.date) return false;
+                            if (!e || !e.date || e.extraordinary) return false;
                             const d = new Date(e.date); d.setHours(0, 0, 0, 0);
                             return d >= r.periodInfo.periodStart && d <= r.periodInfo.today;
                         })
                         .reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
-                    const ritmo = r2(gastosDiarios / r.periodInfo.dayInPeriod);
-                    const gastoProyectado = r2(ritmo * r.periodInfo.remainingDays);
-                    const cierrePrevisto = r2(r.totalAvailable - gastoProyectado);
+                    if (gastosDiarios > 0) {
+                        const ritmo = r2(gastosDiarios / r.periodInfo.dayInPeriod);
+                        const gastoProyectado = r2(ritmo * r.periodInfo.remainingDays);
+                        const cierrePrevisto = r2(gastosDiarios + gastoProyectado - r.totalAvailable);
 
-                    if (cierrePrevisto > 20) {
-                        predictionPhrase = ` Prevese pechar o período con ${fc(cierrePrevisto)} sobrantes.`;
-                    } else if (cierrePrevisto < -5) {
-                        predictionPhrase = ` ⚠️ Ao ritmo actual, pecharás o período con ${fc(Math.abs(cierrePrevisto))} en negativo.`;
-                    } else {
-                        predictionPhrase = ` Vas pechar o período xusto.`;
+                        if (cierrePrevisto < -20) {
+                            predictionPhrase = ` Prevese pechar o período con ${fc(Math.abs(cierrePrevisto))} sobrantes.`;
+                        } else if (cierrePrevisto > 5) {
+                            predictionPhrase = ` ⚠️ Ao ritmo actual, pecharás o período con ${fc(cierrePrevisto)} en negativo.`;
+                        } else {
+                            predictionPhrase = ` Vas pechar o período xusto.`;
+                        }
                     }
                 }
 
@@ -2549,10 +2588,34 @@
                     if (r.daysToZero !== null && r.daysToZero > 0) return `⚠️ Se segues así, en ${r.daysToZero} días entras en negativo.` + predictionPhrase;
                     return "⚠️ Estás en negativo. Revisa os teus gastos." + predictionPhrase;
                 }
-                if (r.availableToday > 50) return "✅ Hoxe tes marxe extra. Podes adiantar aforro!" + predictionPhrase;
-                if (r.availableToday > 20) return `💡 Hoxe podes gastar ata ${fc(r.availableToday)} sen tocar o aforro.` + predictionPhrase;
-                if (r.availableToday > 0) return `💰 Orzamento axustado: ${fc(r.availableToday)} dispoñibles.` + predictionPhrase;
-                return "⚖️ Xusto no límite. Gasta con coidado hoxe." + predictionPhrase;
+                // Emoji de humor baseado nos últimos 7 días
+                const _7days = AppState.expenses.filter(e => {
+                    if (!e || !e.date) return false;
+                    const d = new Date(e.date); d.setHours(0,0,0,0);
+                    const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7); weekAgo.setHours(0,0,0,0);
+                    return d >= weekAgo;
+                }).reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+                const _7daysBudget = r2((r.breakdown.availablePerDay || 0) * 7);
+                const _humor = _7days === 0 ? '😌' : _7days < _7daysBudget * 0.8 ? '😌' : _7days < _7daysBudget * 1.1 ? '😬' : '😱';
+
+                // Frase para reconducir
+                let reconducirPhrase = '';
+                if (r.periodInfo && r.periodInfo.remainingDays > 1 && r.totalAvailable > 0) {
+                    const _gastoAcum = AppState.expenses.filter(e => {
+                        if (!e || !e.date || e.extraordinary) return false;
+                        const d = new Date(e.date); d.setHours(0,0,0,0);
+                        return d >= r.periodInfo.periodStart;
+                    }).reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+                    const _paraReconducir = r2((r.totalAvailable - _gastoAcum) / r.periodInfo.remainingDays - r.breakdown.dailySavingsAmount);
+                    if (_paraReconducir < r.availableToday * 0.85 && _paraReconducir > 0) {
+                        reconducirPhrase = ` Para reconducir: ${fc(_paraReconducir)}/día.`;
+                    }
+                }
+
+                if (r.availableToday > 50) return `${_humor} Hoxe tes marxe extra. Podes adiantar aforro!` + predictionPhrase + reconducirPhrase + inflacionPhrase;
+                if (r.availableToday > 20) return `${_humor} Hoxe podes gastar ata ${fc(r.availableToday)} sen tocar o aforro.` + predictionPhrase + reconducirPhrase + inflacionPhrase;
+                if (r.availableToday > 0) return `${_humor} Orzamento axustado: ${fc(r.availableToday)} dispoñibles.` + predictionPhrase + reconducirPhrase + inflacionPhrase;
+                return `${_humor} Xusto no límite. Gasta con coidado hoxe.` + predictionPhrase + reconducirPhrase + inflacionPhrase;
             }
 
             // NOVO: DETECCIÓN DE ANOMALÍAS
@@ -2931,12 +2994,24 @@
                     alerts.push({ type: 'danger', icon: '💳', title: 'Saldo negativo', text: `"${acc.name}" ten ${fc(acc.balance)}` });
                 }
             });
-            // Alerta pagos próximos
+            // Alerta pagos próximos (7 días + día anterior con notificación)
             const today = getEffectiveDate().getDate();
             AppState.recurringExpenses.forEach(rec => {
+                if (rec.archived) return;
+                if (isRecurringPaidThisPeriod(rec)) return;
                 const daysUntilPayment = rec.dayOfMonth - today;
-                if (daysUntilPayment >= 0 && daysUntilPayment <= 3) {
-                    alerts.push({ type: 'info', icon: '📅', title: daysUntilPayment === 0 ? 'Pago HOXE' : `Pago en ${daysUntilPayment} días`, text: `${rec.description}: ${fc(rec.amount)}` });
+                if (daysUntilPayment >= 0 && daysUntilPayment <= 7) {
+                    const title = daysUntilPayment === 0 ? 'Pago HOXE' : daysUntilPayment === 1 ? 'Pago MAÑÁ' : `Pago en ${daysUntilPayment} días`;
+                    const type = daysUntilPayment <= 1 ? 'warning' : 'info';
+                    alerts.push({ type, icon: '📅', title, text: `${rec.description}: ${fc(rec.amount)}` });
+                    // Notificación na campanita para día anterior e día de vencemento
+                    if (daysUntilPayment <= 1) {
+                        const notifKey = `cartinos_notif_fijo_${rec.id}_${getEffectiveDate().toISOString().split('T')[0]}`;
+                        if (!localStorage.getItem(notifKey)) {
+                            addNotification('warning', title, `${rec.description}: ${fc(rec.amount)}`, '📅');
+                            localStorage.setItem(notifKey, '1');
+                        }
+                    }
                 }
             });
             // Recordatorio de backup cada 7 días
@@ -3090,6 +3165,26 @@
                 toast('Marcado como pagado ✓');
                 updateAllUI();
             }
+        }
+
+        async function archiveRecurring(id) {
+            const rec = AppState.recurringExpenses.find(r => r.id === id);
+            if (!rec) return;
+            rec.archived = true;
+            await Database.update('recurringExpenses', rec);
+            AppState.recurringExpenses = AppState.recurringExpenses.map(r => r.id === id ? rec : r);
+            updateAllUI();
+            toast(`"${escapeHtml(rec.description)}" arquivado ✓`);
+        }
+
+        async function unarchiveRecurring(id) {
+            const rec = AppState.recurringExpenses.find(r => r.id === id);
+            if (!rec) return;
+            rec.archived = false;
+            await Database.update('recurringExpenses', rec);
+            AppState.recurringExpenses = AppState.recurringExpenses.map(r => r.id === id ? rec : r);
+            updateAllUI();
+            toast(`"${escapeHtml(rec.description)}" restaurado ✓`);
         }
 
         async function unmarkRecurringAsPaid(id) {
@@ -3502,17 +3597,7 @@
                             'not-allowed': 'Permiso de micrófono denegado.',
                             'network': 'Erro de rede no recoñecemento.',
                         };
-                        const errMsg = errors[event.error] || 'Erro no recoñecemento de voz.';
-                        toast(errMsg + ' [' + event.error + ']', 'error');
-                        const log = document.getElementById('debugLog');
-                        const content = document.getElementById('debugLogContent');
-                        if (log && content) {
-                            log.style.display = 'block';
-                            const entry = document.createElement('div');
-                            entry.style.padding = '4px 0';
-                            entry.innerHTML = `<span style="color:#ffd93d;">${new Date().toLocaleTimeString()}</span> VOZ ERROR: <span style="color:#ff4757;">${event.error}</span>`;
-                            content.appendChild(entry);
-                        }
+                        toast(errors[event.error] || 'Erro no recoñecemento de voz.', 'error');
                     };
 
                     recognition.onend = () => {
@@ -3725,7 +3810,8 @@
             const _saldoGastoDiario = r.breakdown.dailySpendingBalance || 0;
             const _dtz = _ritmoGasto > 0 ? Math.floor(_saldoGastoDiario / _ritmoGasto) : null;
             $('totalSavings').textContent = _dtz !== null ? _dtz + ' días' : '—';
-            $('committedAmount').textContent = fc(r.breakdown.availablePerDay);
+            const _s = FinancialEngine.calculateMonthlyStats(AppState);
+            $('committedAmount').textContent = fc(_s.dailyAverage);
             // Mostrar día do período en lugar de día do mes
             $('currentDay').textContent = r.periodInfo ? `${r.periodInfo.dayInPeriod}/${r.periodInfo.totalDays}` : new Date().getDate();
             const s = FinancialEngine.calculateMonthlyStats(AppState);
@@ -3842,15 +3928,15 @@
                 elEF.parentElement.querySelector('.info-label').title = 'Metas de aforro ao día / total metas activas';
             }
 
-            // 8. RATIO DE LIQUIDEZ — proba ácida
+            // 8. RATIO DE LIQUIDEZ — saldo total / gasto medio diario real
             const elLiq = $('kpiLiquidity');
             if (elLiq) {
-                const liquidez = r.breakdown.committedRecurring > 0
-                    ? r2(r.breakdown.dailySpendingBalance / r.breakdown.committedRecurring)
-                    : null;
-                elLiq.textContent = liquidez !== null ? liquidez.toFixed(2) : '—';
-                if (liquidez !== null) elLiq.style.color = liquidez < 1 ? 'var(--accent-pink)' : liquidez < 1.5 ? 'var(--accent-yellow)' : 'var(--accent-green)';
-                elLiq.parentElement.querySelector('.info-label').title = 'Saldo dispoñible / gastos fixos pendentes (>1.5 = saudable)';
+                const _gastoMedioDiario = dayInPeriod > 0 ? r2(s.periodExpenses / dayInPeriod) : 0;
+                const _saldoTotal = FinancialEngine.calculateTotalBalance(AppState.accounts);
+                const liquidez = _gastoMedioDiario > 0 ? r2(_saldoTotal / _gastoMedioDiario) : null;
+                elLiq.textContent = liquidez !== null ? liquidez.toFixed(1) + ' días' : '—';
+                elLiq.style.color = 'var(--accent-cyan)';
+                elLiq.parentElement.querySelector('.info-label').title = 'Días que aguanta o teu saldo total ao ritmo de gasto actual';
             }
 
             // 9. GASTOS DISCRECIONAIS
@@ -3921,7 +4007,7 @@
         }
         function updateIncomesList() {
             const c = $('incomesList'), now = getEffectiveDate(); now.setHours(0, 0, 0, 0);
-            const items = AppState.incomes.filter(i => { if (!i || !i.date) return false; const d = new Date(i.date); d.setHours(0, 0, 0, 0); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); }).sort((a, b) => new Date(b.date) - new Date(a.date));
+            const items = AppState.incomes.filter(i => { if (!i || !i.date) return false; const d = new Date(i.date); d.setHours(0, 0, 0, 0); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); }).sort((a, b) => new Date(b.date) - new Date(a.date) || b.id - a.id);
             if (!items.length) { c.innerHTML = '<div class="empty-state"><div class="empty-state-icon">💰</div><p>Rexistra ingresos</p></div>'; return; }
             c.innerHTML = items.map(i => `<div class="list-item" style="border-left-color:var(--accent-green)"><div class="list-item-info"><div class="list-item-name">${escapeHtml(i.description)}${i.incomeType === 'extra' ? '<span class="tag tag-extra">Extra</span>' : ''}</div><div class="list-item-details">${fd(i.date)}</div></div><div class="list-item-amount income">+${fc(i.amount)}</div><div class="list-item-actions"><button class="btn btn-secondary btn-icon" onclick="editIncome(${i.id})">✎</button>
 <button class="btn btn-danger btn-icon" data-delete="income" data-id="${i.id}">✕</button></div></div>`).join('');
@@ -3931,7 +4017,7 @@
             const c = $('expensesList'), now = getEffectiveDate(); now.setHours(0, 0, 0, 0);
             const dynCats = {}; loadCategories('expense').forEach(ct => { dynCats[ct.key] = ct.icon; }); loadCategories('recurring').forEach(ct => { dynCats[ct.key] = ct.icon; });
             const cats = Object.assign({ alimentacion: '🍎', transporte: '🚗', ocio: '🎮', saude: '💊', roupa: '👕', cafe: '☕', subscricions: '📱', outros: '📦', vivienda: '🏠', servicios: '💡', seguros: '🛡️' }, dynCats);
-            let items = AppState.expenses.filter(e => { if (!e || !e.date) return false; const d = new Date(e.date); d.setHours(0, 0, 0, 0); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); }).sort((a, b) => new Date(b.date) - new Date(a.date));
+            let items = AppState.expenses.filter(e => { if (!e || !e.date) return false; const d = new Date(e.date); d.setHours(0, 0, 0, 0); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); }).sort((a, b) => new Date(b.date) - new Date(a.date) || b.id - a.id);
 
             items = filterExpensesBySearch(items);
 
@@ -3947,8 +4033,17 @@
                         resultsList.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🛒</div><p>' + (AppState.searchQuery ? 'Sen resultados' : 'Rexistra gastos') + '</p></div>';
                         return;
                     }
-                    resultsList.innerHTML = filtered.map(e => `<div class="list-item" data-expense-id="${e.id}" style="${e.extraordinary ? 'opacity:0.7;border-left-color:var(--accent-purple);' : ''}"><div class="list-item-info"><div class="list-item-name">${escapeHtml(e.description)}${e.extraordinary ? ' <span style="font-size:0.7rem;color:var(--accent-purple);background:rgba(168,85,247,0.1);padding:1px 6px;border-radius:10px;">⭐ Extraordinario</span>' : ''}</div> <div class="list-item-details">${fd(e.date)} · ${cats[e.category] || '📦'}${e.location ? ' · 📍 ' + escapeHtml(e.location) : ''}${formatWorkTime(e.amount)}</div></div><div class="list-item-amount expense">-${fc(e.amount)}</div><div class="list-item-actions"><button class="btn btn-secondary btn-icon" onclick="duplicateExpense(${e.id})" title="Duplicar">⧉</button><button class="btn btn-secondary btn-icon" onclick="editExpense(${e.id})">✎</button>
-<button class="btn btn-danger btn-icon" data-delete="expense" data-id="${e.id}">✕</button></div></div>`).join('');
+                    const _total = r2(filtered.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0));
+                    const _media = r2(_total / filtered.length);
+                    const _resumen = AppState.searchQuery ? `<div style="padding:6px 10px;margin-bottom:8px;background:rgba(0,245,255,0.08);border-radius:8px;font-size:0.75rem;color:var(--text-secondary);">📊 ${filtered.length} resultados · Total: <strong style="color:var(--accent-cyan);">${fc(_total)}</strong> · Media: <strong style="color:var(--accent-cyan);">${fc(_media)}</strong></div>` : '';
+                    resultsList.innerHTML = _resumen + filtered.map(e => {
+                        const _h = AppState.hourlyRate > 0 ? r2(e.amount/AppState.hourlyRate) : null;
+                        const _metas = (AppState.savingsGoals||[]).filter(g=>g.active!==false&&!g.paused&&!g.completed&&g.targetAmount>0);
+                        const _metaInfo = _h && _metas.length > 0 ? ` · ${r2((e.amount/_metas[0].targetAmount)*100)}% ${escapeHtml(_metas[0].name)}` : '';
+                        const _horasInfo = _h ? `<div style="font-size:0.65rem;color:var(--text-muted);margin-top:2px;">${_h}h de traballo${_metaInfo}</div>` : '';
+                        return `<div class="list-item" data-expense-id="${e.id}" style="${e.extraordinary ? 'opacity:0.7;border-left-color:var(--accent-purple);' : ''}"><div class="list-item-info"><div class="list-item-name">${escapeHtml(e.description)}${e.extraordinary ? ' <span style="font-size:0.7rem;color:var(--accent-purple);background:rgba(168,85,247,0.1);padding:1px 6px;border-radius:10px;">⭐ Extraordinario</span>' : ''}</div> <div class="list-item-details">${fd(e.date)} · ${cats[e.category] || '📦'}${e.location ? ' · 📍 ' + escapeHtml(e.location) : ''}${formatWorkTime(e.amount)}</div></div><div class="list-item-amount expense">-${fc(e.amount)}${_horasInfo}</div><div class="list-item-actions"><button class="btn btn-secondary btn-icon" onclick="duplicateExpense(${e.id})" title="Duplicar">⧉</button><button class="btn btn-secondary btn-icon" onclick="editExpense(${e.id})">✎</button>
+<button class="btn btn-danger btn-icon" data-delete="expense" data-id="${e.id}">✕</button></div></div>`;
+                    }).join('');
                 });
             }
 
@@ -3959,43 +4054,90 @@
                 resultsList.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🛒</div><p>' + (AppState.searchQuery ? 'Sen resultados' : 'Rexistra gastos') + '</p></div>';
                 return;
             }
-            resultsList.innerHTML = items.map(e => `<div class="list-item" data-expense-id="${e.id}" style="${e.extraordinary ? 'opacity:0.7;border-left-color:var(--accent-purple);' : ''}"><div class="list-item-info"><div class="list-item-name">${escapeHtml(e.description)}${e.extraordinary ? ' <span style="font-size:0.7rem;color:var(--accent-purple);background:rgba(168,85,247,0.1);padding:1px 6px;border-radius:10px;">⭐ Extraordinario</span>' : ''}</div> <div class="list-item-details">${fd(e.date)} · ${cats[e.category] || '📦'}${e.location ? ' · 📍 ' + escapeHtml(e.location) : ''}${formatWorkTime(e.amount)}</div></div><div class="list-item-amount expense">-${fc(e.amount)}</div><div class="list-item-actions"><button class="btn btn-secondary btn-icon" onclick="duplicateExpense(${e.id})" title="Duplicar">⧉</button><button class="btn btn-secondary btn-icon" onclick="editExpense(${e.id})">✎</button>
-<button class="btn btn-danger btn-icon" data-delete="expense" data-id="${e.id}">✕</button></div></div>`).join('');
+            resultsList.innerHTML = items.map(e => {
+                const _h = AppState.hourlyRate > 0 ? r2(e.amount/AppState.hourlyRate) : null;
+                const _metas = (AppState.savingsGoals||[]).filter(g=>g.active!==false&&!g.paused&&!g.completed&&g.targetAmount>0);
+                const _metaInfo = _h && _metas.length > 0 ? ` · ${r2((e.amount/_metas[0].targetAmount)*100)}% ${escapeHtml(_metas[0].name)}` : '';
+                const _horasInfo = _h ? `<div style="font-size:0.65rem;color:var(--text-muted);margin-top:2px;">${_h}h de traballo${_metaInfo}</div>` : '';
+                return `<div class="list-item" data-expense-id="${e.id}" style="${e.extraordinary ? 'opacity:0.7;border-left-color:var(--accent-purple);' : ''}"><div class="list-item-info"><div class="list-item-name">${escapeHtml(e.description)}${e.extraordinary ? ' <span style="font-size:0.7rem;color:var(--accent-purple);background:rgba(168,85,247,0.1);padding:1px 6px;border-radius:10px;">⭐ Extraordinario</span>' : ''}</div> <div class="list-item-details">${fd(e.date)} · ${cats[e.category] || '📦'}${e.location ? ' · 📍 ' + escapeHtml(e.location) : ''}${formatWorkTime(e.amount)}</div></div><div class="list-item-amount expense">-${fc(e.amount)}${_horasInfo}</div><div class="list-item-actions"><button class="btn btn-secondary btn-icon" onclick="duplicateExpense(${e.id})" title="Duplicar">⧉</button><button class="btn btn-secondary btn-icon" onclick="editExpense(${e.id})">✎</button>
+<button class="btn btn-danger btn-icon" data-delete="expense" data-id="${e.id}">✕</button></div></div>`;
+            }).join('');
         }
 
         function updateRecurringList() {
             const c = $('recurringList'), today = getEffectiveDate(); today.setHours(0, 0, 0, 0);
-            const payDay = AppState.payDay || 1;
             const currentPeriodKey = getCurrentPeriodKey();
             const dynRecCats = {}; loadCategories('recurring').forEach(ct => { dynRecCats[ct.key] = ct.icon; }); loadCategories('expense').forEach(ct => { dynRecCats[ct.key] = ct.icon; });
-            const cats = Object.assign({ vivienda: '🏠', servicios: '💡', seguros: '🛡️', subscricions: '📱', outros: '📦' }, dynRecCats);
+            const cats = Object.assign({ vivienda: '🏠', servicios: '💡', seguros: '🛡️', subscricions: '📱', transporte: '🚗', alimentacion: '🍎', outros: '📦' }, dynRecCats);
+            const active = AppState.recurringExpenses.filter(r => !r.archived).sort((a, b) => a.dayOfMonth - b.dayOfMonth);
+            const archived = AppState.recurringExpenses.filter(r => r.archived).sort((a, b) => a.dayOfMonth - b.dayOfMonth);
             if (!AppState.recurringExpenses.length) { c.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔄</div><p>Configura gastos fixos</p></div>'; return; }
-            c.innerHTML = AppState.recurringExpenses.sort((a, b) => a.dayOfMonth - b.dayOfMonth).map(r => {
-                const paidManually = r.paidPeriods && r.paidPeriods.includes(currentPeriodKey);
-                const paid = paidManually;
+
+            const facturasCats = ['vivienda', 'servicios', 'seguros', 'transporte', 'alimentacion'];
+            const subscCats = ['subscricions'];
+            const facturas = active.filter(r => facturasCats.includes(r.category));
+            const subscricions = active.filter(r => subscCats.includes(r.category));
+            const outros = active.filter(r => !facturasCats.includes(r.category) && !subscCats.includes(r.category));
+
+            const renderItem = r => {
+                const paid = r.paidPeriods && r.paidPeriods.includes(currentPeriodKey);
                 const acc = AppState.accounts.find(a => a.id === r.accountId);
                 const accName = acc ? escapeHtml(acc.name) : '?';
                 const daysInCurrentMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
                 const effectiveDay = Math.min(r.dayOfMonth, daysInCurrentMonth);
-                const dayLabel = effectiveDay !== r.dayOfMonth
-                    ? `Día ${effectiveDay} (axustado de ${r.dayOfMonth})`
-                    : `Día ${r.dayOfMonth}`;
+                const dayLabel = effectiveDay !== r.dayOfMonth ? `Día ${effectiveDay} (axustado de ${r.dayOfMonth})` : `Día ${r.dayOfMonth}`;
                 const togglePaidBtn = paid
                     ? `<button class="btn btn-secondary btn-icon" data-unmark-paid="${r.id}" title="Desmarcar">↩</button>`
                     : `<button class="btn btn-success btn-icon" data-mark-paid="${r.id}" title="Marcar pagado">✓</button>`;
                 return `<div class="list-item" style="border-left-color:${paid ? 'var(--accent-green)' : 'var(--accent-yellow)'}">
-            <div class="list-item-info">
-                <div class="list-item-name">${escapeHtml(r.description)}${r.variable ? ' <span style="font-size:0.7rem;color:var(--accent-cyan);background:rgba(0,245,255,0.1);padding:1px 6px;border-radius:10px;">~variable</span>' : ''}</div>
-                <div class="list-item-details">${dayLabel} · ${accName} · ${cats[r.category] || '📦'} · ${paid ? '✓ Pagado' : '○ Pendente'}${r.variable ? ` · est. ${fc(getVariableRecurringEstimate(r))}` : ''}</div>
-            </div>
-            <div class="list-item-amount expense">-${fc(r.variable ? getVariableRecurringEstimate(r) : r.amount)}</div>
-            <div class="list-item-actions">
-                <button class="btn btn-secondary btn-icon" data-edit-recurring="${r.id}" title="Editar">✎</button>
-                ${togglePaidBtn}
-                <button class="btn btn-danger btn-icon" data-delete="recurring" data-id="${r.id}">✕</button>
-            </div>
-        </div>`;
-            }).join('');
+                    <div class="list-item-info">
+                        <div class="list-item-name">${escapeHtml(r.description)}${r.variable ? ' <span style="font-size:0.7rem;color:var(--accent-cyan);background:rgba(0,245,255,0.1);padding:1px 6px;border-radius:10px;">~variable</span>' : ''}</div>
+                        <div class="list-item-details">${dayLabel} · ${accName} · ${cats[r.category] || '📦'} · ${paid ? '✓ Pagado' : '○ Pendente'}${r.variable ? ` · est. ${fc(getVariableRecurringEstimate(r))}` : ''}</div>
+                    </div>
+                    <div class="list-item-amount expense">-${fc(r.variable ? getVariableRecurringEstimate(r) : r.amount)}</div>
+                    <div class="list-item-actions">
+                        <button class="btn btn-secondary btn-icon" data-edit-recurring="${r.id}" title="Editar">✎</button>
+                        ${togglePaidBtn}
+                        <button class="btn btn-secondary btn-icon" onclick="archiveRecurring(${r.id})" title="Arquivar">📦</button>
+                        <button class="btn btn-danger btn-icon" data-delete="recurring" data-id="${r.id}">✕</button>
+                    </div>
+                </div>`;
+            };
+
+            const renderGroup = (title, icon, items, color) => {
+                if (!items.length) return '';
+                const total = r2(items.reduce((s, r) => s + (parseFloat(r.variable ? getVariableRecurringEstimate(r) : r.amount) || 0), 0));
+                return `<div style="margin-bottom:16px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding:6px 10px;background:rgba(255,255,255,0.04);border-radius:8px;">
+                        <span style="font-family:'Orbitron',monospace;font-size:0.7rem;color:${color};text-transform:uppercase;">${icon} ${title}</span>
+                        <span style="font-size:0.75rem;color:var(--text-muted);">${fc(total)}/mes · ${fc(r2(total*12))}/ano</span>
+                    </div>
+                    ${items.map(renderItem).join('')}
+                </div>`;
+            };
+
+            let html = '';
+            html += renderGroup('Facturas', '🧾', facturas, 'var(--accent-yellow)');
+            html += renderGroup('Subscricións', '📱', subscricions, 'var(--accent-cyan)');
+            html += renderGroup('Outros', '📦', outros, 'var(--text-muted)');
+
+            if (archived.length) {
+                html += `<div style="margin-top:16px;">
+                    <div style="font-family:'Orbitron',monospace;font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;padding:6px 10px;background:rgba(255,255,255,0.02);border-radius:8px;">📦 Arquivados (${archived.length})</div>
+                    ${archived.map(r => `<div class="list-item" style="opacity:0.5;border-left-color:var(--text-muted);">
+                        <div class="list-item-info">
+                            <div class="list-item-name">${escapeHtml(r.description)}</div>
+                            <div class="list-item-details">Arquivado · ${fc(r.amount)}/mes</div>
+                        </div>
+                        <div class="list-item-actions">
+                            <button class="btn btn-secondary btn-icon" onclick="unarchiveRecurring(${r.id})" title="Desarquivar">↩</button>
+                            <button class="btn btn-danger btn-icon" data-delete="recurring" data-id="${r.id}">✕</button>
+                        </div>
+                    </div>`).join('')}
+                </div>`;
+            }
+
+            c.innerHTML = html || '<div class="empty-state"><div class="empty-state-icon">🔄</div><p>Configura gastos fixos</p></div>';
         }
 
         function addInlineCategory(type, formId) {
@@ -4390,6 +4532,7 @@
                     updateDashboardChart();
                     updateTrafficLight();
                     checkMonthSummary();
+                    checkWeeklySummary();
                     break;
                 case 'accounts':
                     updateAccountsList();
@@ -4496,26 +4639,36 @@
             const configurableAlerts = checkConfigurableAlerts();
             const pa = $('patternAnalysis');
 
-            // NOVO: Combinar anomalías, patróns básicos, avanzados e alertas configurables
-            const allInsights = [
+            // Alertas (configurables + anomalías) — urxente
+            const alertInsights = [
                 ...configurableAlerts.map(a => ({ icon: a.icon, title: a.title, description: a.text, amount: null, type: a.type })),
-                ...anomalies.map(a => ({ icon: a.icon, title: a.title, description: a.text, amount: null })),
+                ...anomalies.map(a => ({ icon: a.icon, title: a.title, description: a.text, amount: null }))
+            ].filter((insight, index, self) => index === self.findIndex(i => i.title === insight.title));
+
+            // Patróns (básicos + avanzados) — informativo
+            const patternInsights = [
                 ...patterns,
                 ...advancedPatterns
-            ];
+            ].filter((insight, index, self) => index === self.findIndex(i => i.title === insight.title));
 
-            // Eliminar duplicados por título
-            const uniqueInsights = allInsights.filter((insight, index, self) =>
-                index === self.findIndex(i => i.title === insight.title)
-            );
-
-            if (!uniqueInsights.length) {
-                pa.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔍</div><p>Necesítanse máis datos</p></div>';
-            } else {
-                pa.innerHTML = uniqueInsights.slice(0, 8).map(p => {
+            let html = '';
+            if (alertInsights.length > 0) {
+                html += `<div style="font-family:'Orbitron',monospace;font-size:0.7rem;color:#ff4757;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;margin-top:4px;">🚨 Alertas</div>`;
+                html += alertInsights.map(p => {
                     const typeClass = p.type === 'danger' ? 'style="border-color: #ff4757;"' : p.type === 'warning' ? 'style="border-color: var(--accent-yellow);"' : '';
                     return `<div class="pattern-card" ${typeClass}><div class="pattern-header"><span class="pattern-icon">${p.icon}</span><span class="pattern-title">${p.title}</span></div><div class="pattern-description">${p.description}${p.amount ? ` <span class="pattern-amount">${fc(p.amount)}</span>` : ''}</div></div>`;
                 }).join('');
+            }
+            if (patternInsights.length > 0) {
+                html += `<div style="font-family:'Orbitron',monospace;font-size:0.7rem;color:var(--accent-cyan);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;margin-top:${alertInsights.length > 0 ? '16px' : '4px'};">🔍 Patróns</div>`;
+                html += patternInsights.slice(0, 6).map(p => {
+                    return `<div class="pattern-card"><div class="pattern-header"><span class="pattern-icon">${p.icon}</span><span class="pattern-title">${p.title}</span></div><div class="pattern-description">${p.description}${p.amount ? ` <span class="pattern-amount">${fc(p.amount)}</span>` : ''}</div></div>`;
+                }).join('');
+            }
+            if (!html) {
+                pa.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔍</div><p>Necesítanse máis datos</p></div>';
+            } else {
+                pa.innerHTML = html;
             }
             updateWeeklyChart();
             updateCashflowChart();
@@ -4820,12 +4973,69 @@
             }).join('')}`;
         }
 
+        function checkWeeklySummary() {
+            const now = getEffectiveDate();
+            if (now.getDay() !== 1) return; // Solo os luns
+            const lastShown = localStorage.getItem('cartinos_weeklySummaryShown');
+            const thisWeek = `${now.getFullYear()}-${now.getMonth()}-${Math.floor(now.getDate()/7)}`;
+            if (lastShown === thisWeek) return;
+            // Calcular datos da semana anterior
+            const weekStart = new Date(now); weekStart.setDate(now.getDate() - 7); weekStart.setHours(0,0,0,0);
+            const weekEnd = new Date(now); weekEnd.setDate(now.getDate() - 1); weekEnd.setHours(23,59,59,999);
+            const prevWeekStart = new Date(now); prevWeekStart.setDate(now.getDate() - 14); prevWeekStart.setHours(0,0,0,0);
+            const prevWeekEnd = new Date(weekStart); prevWeekEnd.setHours(0,0,0,0); prevWeekEnd.setTime(prevWeekEnd.getTime() - 1);
+            const weekExpenses = AppState.expenses.filter(e => { if (!e || !e.date) return false; const d = new Date(e.date); return d >= weekStart && d <= weekEnd; });
+            const prevWeekExpenses = AppState.expenses.filter(e => { if (!e || !e.date) return false; const d = new Date(e.date); return d >= prevWeekStart && d <= prevWeekEnd; });
+            if (!weekExpenses.length) return;
+            const totalWeek = r2(weekExpenses.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0));
+            const totalPrevWeek = r2(prevWeekExpenses.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0));
+            const diff = totalPrevWeek > 0 ? r2(((totalWeek - totalPrevWeek) / totalPrevWeek) * 100) : null;
+            const byCat = {};
+            weekExpenses.forEach(e => { byCat[e.category] = (byCat[e.category] || 0) + (parseFloat(e.amount) || 0); });
+            const topCat = Object.entries(byCat).sort((a,b) => b[1]-a[1])[0];
+            const catNames = { alimentacion: '🍎 Alimentación', transporte: '🚗 Transporte', ocio: '🎮 Ocio', saude: '💊 Saúde', roupa: '👕 Roupa', cafe: '☕ Café', subscricions: '📱 Subscricións', vivienda: '🏠 Vivenda', servicios: '💡 Servizos', outros: '📦 Outros' };
+            // Suxestión de reto se sobrou da semana anterior
+            const r = FinancialEngine.calculateAvailableToday(AppState);
+            const sobrante = totalPrevWeek > 0 && totalPrevWeek < r2((r.breakdown.availablePerDay || 0) * 7) ? r2((r.breakdown.availablePerDay || 0) * 7 - totalPrevWeek) : 0;
+            const retoSuxerido = sobrante > 5 ? `<div style="margin-top:10px;padding:8px;background:rgba(57,255,20,0.08);border-radius:8px;font-size:0.8rem;">💡 A semana pasada sobráronte <strong style="color:var(--accent-green);">${fc(sobrante)}</strong>. ¿Queres aforralos esta semana? <button class="btn btn-primary" style="padding:4px 10px;font-size:0.75rem;min-height:28px;margin-left:8px;" onclick="createWeeklyChallenge(${sobrante})">Aceptar reto</button></div>` : '';
+            const card = $('weeklySummaryCard');
+            const el = $('weeklySummaryContent');
+            if (!el || !card) return;
+            el.innerHTML = `
+                <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:12px;">📅 Semana do ${weekStart.toLocaleDateString('gl-ES', {day:'numeric',month:'short'})} ao ${weekEnd.toLocaleDateString('gl-ES', {day:'numeric',month:'short'})}</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+                    <div style="text-align:center;padding:8px;background:rgba(255,110,199,0.08);border-radius:8px;">
+                        <div style="font-family:'Orbitron',monospace;font-size:0.9rem;color:var(--accent-pink);">${fc(totalWeek)}</div>
+                        <div style="font-size:0.7rem;color:var(--text-muted);">Total semana</div>
+                    </div>
+                    <div style="text-align:center;padding:8px;background:rgba(${diff !== null && diff > 0 ? '255,71,87' : '57,255,20'},0.08);border-radius:8px;">
+                        <div style="font-family:'Orbitron',monospace;font-size:0.9rem;color:${diff !== null && diff > 0 ? '#ff4757' : 'var(--accent-green)'};">${diff !== null ? (diff > 0 ? '+' : '') + diff + '%' : '—'}</div>
+                        <div style="font-size:0.7rem;color:var(--text-muted);">vs semana anterior</div>
+                    </div>
+                </div>
+                ${topCat ? `<div style="font-size:0.82rem;margin-bottom:6px;">📊 Categoría principal: <strong style="color:var(--accent-pink);">${catNames[topCat[0]] || topCat[0]}</strong> — ${fc(topCat[1])}</div>` : ''}
+                ${retoSuxerido}
+            `;
+            card.style.display = 'block';
+            localStorage.setItem('cartinos_weeklySummaryShown', thisWeek);
+        }
+
+        async function createWeeklyChallenge(amount) {
+            const name = 'Reto semanal';
+            const targetDate = new Date(); targetDate.setDate(targetDate.getDate() + 7);
+            const data = { name, targetAmount: amount, targetDate: targetDate.toISOString().split('T')[0], dailyAmount: r2(amount/7), currentAmount: 0, active: true };
+            const id = await Database.add('savingsGoals', data);
+            AppState.savingsGoals.push({ ...data, id });
+            updateAllUI();
+            toast(`🎯 Reto de ${fc(amount)} creado para esta semana!`);
+        }
+
         function checkMonthSummary() {
             const now = getEffectiveDate();
-            if (now.getDate() !== 1) return; // Solo o primeiro día do mes
             const lastShown = localStorage.getItem('cartinos_monthSummaryShown');
             const thisMonth = `${now.getFullYear()}-${now.getMonth()}`;
-            if (lastShown === thisMonth) return; // Xa se mostrou este mes
+            if (lastShown === thisMonth) return;
+            if (now.getDate() > 5) return; // Mostrar só os primeiros 5 días do mes
             // Calcular datos do mes anterior
             const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
             const prevMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
@@ -4855,6 +5065,15 @@
             const el = $('monthSummaryContent');
             const card = $('monthSummaryCard');
             if (!el || !card) return;
+            // Desglose por conta
+            const byAccount = {};
+            prevExpenses.forEach(e => {
+                const acc = AppState.accounts.find(a => a.id === e.accountId);
+                const accName = acc ? acc.name : 'Sen conta';
+                byAccount[accName] = (byAccount[accName] || 0) + (parseFloat(e.amount) || 0);
+            });
+            const accountBreakdown = Object.entries(byAccount).sort((a, b) => b[1] - a[1]);
+
             el.innerHTML = `
                 <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:12px;">📅 ${monthName.charAt(0).toUpperCase() + monthName.slice(1)}</div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
@@ -4868,7 +5087,8 @@
                     </div>
                 </div>
                 ${worstCat ? `<div style="font-size:0.82rem;margin-bottom:6px;">📈 Categoría máis cara: <strong style="color:var(--accent-pink);">${catNames[worstCat[0]] || worstCat[0]}</strong> — ${fc(worstCat[1])}</div>` : ''}
-                ${bestCat && bestCat[0] !== worstCat?.[0] ? `<div style="font-size:0.82rem;">📉 Categoría máis barata: <strong style="color:var(--accent-green);">${catNames[bestCat[0]] || bestCat[0]}</strong> — ${fc(bestCat[1])}</div>` : ''}
+                ${bestCat && bestCat[0] !== worstCat?.[0] ? `<div style="font-size:0.82rem;margin-bottom:12px;">📉 Categoría máis barata: <strong style="color:var(--accent-green);">${catNames[bestCat[0]] || bestCat[0]}</strong> — ${fc(bestCat[1])}</div>` : ''}
+                ${accountBreakdown.length > 1 ? `<div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:6px;margin-top:8px;">💳 Gasto por conta:</div>${accountBreakdown.map(([name, amount]) => `<div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:4px;"><span style="color:var(--text-secondary);">${escapeHtml(name)}</span><span style="color:var(--accent-pink);font-family:'Orbitron',monospace;">${fc(amount)}</span></div>`).join('')}` : ''}
             `;
             card.style.display = 'block';
             localStorage.setItem('cartinos_monthSummaryShown', thisMonth);
@@ -5467,7 +5687,19 @@
                 detectAdvancedPatterns();
                 updateFrequentExpenses();
 
-                toast('Gasto gardado ✓');
+                // Coste en horas e impacto en metas
+                let toastExtra = '';
+                if (AppState.hourlyRate > 0) {
+                    const horas = r2(data.amount / AppState.hourlyRate);
+                    toastExtra += ` — ${horas}h de traballo`;
+                }
+                const metasActivas = (AppState.savingsGoals || []).filter(g => g.active !== false && !g.paused && !g.completed && g.targetAmount > 0);
+                if (metasActivas.length > 0) {
+                    const metaPrincipal = metasActivas[0];
+                    const pct = r2((data.amount / metaPrincipal.targetAmount) * 100);
+                    if (pct >= 1) toastExtra += ` · ${pct}% de "${metaPrincipal.name}"`;
+                }
+                toast('Gasto gardado ✓' + toastExtra);
             } catch (err) {
                 toast('Erro ao gardar gasto: ' + err.message, 'error');
             } finally {
@@ -6807,6 +7039,18 @@
             updateFrequentExpenses();
             updatePeriodInfo();
         }
+        function showPiggySummary() {
+            const r = FinancialEngine.calculateAvailableToday(AppState);
+            if (!r) return;
+            const proximoFijo = (AppState.recurringExpenses || [])
+                .filter(rec => !rec.archived && !isRecurringPaidThisPeriod(rec))
+                .sort((a, b) => (a.dayOfMonth || 1) - (b.dayOfMonth || 1))[0];
+            const fixoInfo = proximoFijo ? ` · Próximo fixo: ${proximoFijo.description} (${fc(proximoFijo.amount)})` : '';
+            const diasRestantes = r.periodInfo ? r.periodInfo.remainingDays : '—';
+            const saldoTotal = fc(FinancialEngine.calculateTotalBalance(AppState.accounts));
+            toast(`💰 ${fc(r.availableToday)} dispoñible · Saldo: ${saldoTotal} · ${diasRestantes} días restantes${fixoInfo}`, 'info');
+        }
+
         function updatePeriodInfo() {
             const info = $('periodInfo');
             const text = $('periodInfoText');
