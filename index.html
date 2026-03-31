@@ -127,7 +127,7 @@
             max-width: 1400px;
             margin: 0 auto;
             padding: 15px;
-            padding-bottom: 30px;
+            padding-bottom: calc(80px + env(safe-area-inset-bottom));
         }
 
         header {
@@ -375,8 +375,8 @@
 
         .fab-container {
             position: fixed;
-            bottom: 30px;
-            bottom: calc(30px + env(safe-area-inset-bottom));
+            bottom: 100px;
+            bottom: calc(100px + env(safe-area-inset-bottom));
             right: 20px;
             right: calc(20px + env(safe-area-inset-right));
             z-index: 50;
@@ -444,11 +444,19 @@
 
         .nav-tabs {
             display: flex;
-            gap: 6px;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-glow);
+            padding: 8px 8px;
+            padding-bottom: calc(8px + env(safe-area-inset-bottom));
             justify-content: center;
-            padding: 0 5px;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 0;
         }
 
         .nav-tab {
@@ -1831,20 +1839,7 @@
                 </div>
                 <div id="productHistoryList"></div>
             </div>
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title">💾 Datos</h2>
-                </div>
-                <div class="btn-group">
-                    <button class="btn btn-primary" id="btnExportJSON">JSON</button>
-                    <button class="btn btn-secondary" id="btnExportCSV">CSV</button>
-                    <button class="btn btn-secondary" id="btnExportPDF">PDF</button>
-                    <button class="btn btn-secondary" id="btnImport">Importar</button>
-                    <input type="file" id="importFile" accept=".json" style="display:none;">
-                    <button class="btn btn-danger" id="btnReset">Borrar</button>
-                </div>
-            </div>
-        </section>
+            </section>
 
         <section class="section" id="section-settings">
             <div class="card">
@@ -1973,6 +1968,19 @@
                 <p id="pushStatus" style="margin-top:10px;font-size:0.8rem;color:var(--text-muted);"></p>
             </div>
 
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">💾 Datos</h2>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="btnExportJSON">JSON</button>
+                    <button class="btn btn-secondary" id="btnExportCSV">CSV</button>
+                    <button class="btn btn-secondary" id="btnExportPDF">PDF</button>
+                    <button class="btn btn-secondary" id="btnImport">Importar</button>
+                    <input type="file" id="importFile" accept=".json" style="display:none;">
+                    <button class="btn btn-danger" id="btnReset">Borrar</button>
+                </div>
+            </div>
             <div class="card">
                 <div class="card-header">
                     <h2 class="card-title">⚙️ Estado</h2>
@@ -2537,7 +2545,7 @@
                     if (_cat3m[cat] && _cat3m[cat] > 0) {
                         const _media3m = r2(_cat3m[cat] / 3);
                         const _subida = ((_catActual[cat] - _media3m) / _media3m) * 100;
-                        if (_subida > 15 && _catActual[cat] > 20) {
+                        if (_subida > 15 && _subida < 200 && _catActual[cat] > 20 && _cat3m[cat] > 10) {
                             inflacionPhrase = ` 📈 ${_catNames[cat] || cat} subiu un ${_subida.toFixed(0)}% vs a media dos últimos 3 meses.`;
                             break;
                         }
@@ -7476,14 +7484,34 @@
                 const dayIncomes = AppState.incomes.filter(i => i.date && i.date.startsWith(dateStr));
                 const hasMovements = dayExpenses.length > 0 || dayIncomes.length > 0;
 
+                const dayTotal = dayExpenses.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+                const _availPerDay = AppState.lastCalculation?.breakdown?.availablePerDay || 0;
+                const dayFixos = AppState.recurringExpenses.filter(r => !r.archived && r.dayOfMonth === day && (month + 1) === new Date().getMonth() + 1);
+                const hasFixos = dayFixos.length > 0;
+                const hasIncome = dayIncomes.length > 0;
+
                 let dayStyle = 'text-align:center;padding:8px;border-radius:8px;cursor:pointer;font-size:0.85rem;';
-                if (isToday) dayStyle += 'background:rgba(255,217,61,0.3);border:2px solid var(--accent-yellow);color:var(--text-primary);font-weight:bold;';
-                else if (hasMovements) dayStyle += 'background:rgba(168,85,247,0.2);border:1px solid var(--accent-purple);';
-                else dayStyle += 'background:rgba(0,0,0,0.2);border:1px solid rgba(255,110,199,0.1);';
+                if (isToday) {
+                    dayStyle += 'background:rgba(255,217,61,0.3);border:2px solid var(--accent-yellow);color:var(--text-primary);font-weight:bold;';
+                } else if (dayTotal > 0 && _availPerDay > 0) {
+                    const ratio = dayTotal / _availPerDay;
+                    if (ratio < 0.5) dayStyle += 'background:rgba(57,255,20,0.2);border:1px solid rgba(57,255,20,0.4);';
+                    else if (ratio < 1.2) dayStyle += 'background:rgba(255,217,61,0.2);border:1px solid rgba(255,217,61,0.4);';
+                    else dayStyle += 'background:rgba(255,71,87,0.2);border:1px solid rgba(255,71,87,0.4);';
+                } else if (dayTotal > 0) {
+                    dayStyle += 'background:rgba(255,217,61,0.2);border:1px solid rgba(255,217,61,0.3);';
+                } else {
+                    dayStyle += 'background:rgba(0,0,0,0.2);border:1px solid rgba(255,110,199,0.1);';
+                }
 
-                const dot = hasEvents ? '<div style="width:4px;height:4px;background:var(--accent-pink);border-radius:50%;margin:2px auto 0;"></div>' : '';
+                const dots = [
+                    hasEvents ? '<div style="width:4px;height:4px;background:var(--accent-pink);border-radius:50%;display:inline-block;margin:0 1px;"></div>' : '',
+                    hasFixos ? '<div style="width:4px;height:4px;background:var(--accent-purple);border-radius:50%;display:inline-block;margin:0 1px;"></div>' : '',
+                    hasIncome ? '<div style="width:4px;height:4px;background:#00f5ff;border-radius:50%;display:inline-block;margin:0 1px;"></div>' : ''
+                ].join('');
+                const dotsRow = dots ? `<div style="text-align:center;margin-top:2px;">${dots}</div>` : '';
 
-                html += `<div style="${dayStyle}" onclick="showDayDetails('${dateStr}')">${day}${dot}</div>`;
+                html += `<div style="${dayStyle}" onclick="showDayDetails('${dateStr}')">${day}${dotsRow}</div>`;
             }
 
             gridEl.innerHTML = html;
